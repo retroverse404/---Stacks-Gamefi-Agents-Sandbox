@@ -6,6 +6,55 @@ Work in progress: a TinyRealms fork evolving toward a 2D social world and sandbo
 
 Originally forked from [61cygni/tinyrealms](https://github.com/61cygni/tinyrealms).
 
+## At A Glance
+
+- **What it is**: a 2D social world and customizable game foundation
+- **What works now**: world rendering, map editing, multiplayer foundations, NPC runtime, Braintrust-backed AI actions
+- **What it is becoming**: a sandbox for AI agents, creator economy, and Stacks/Bitcoin-native interactions
+- **Why Stacks**: the architecture is being shaped for future AIBTC patterns, x402 on Stacks transaction flows, and external ecosystem adapters without coupling those concerns into the core game runtime
+
+## Why This Matters
+
+`stacks2d (tinyrealms)` is being developed as a practical bridge between:
+- customizable 2D worldbuilding
+- AI-enhanced NPC interaction
+- modular agent infrastructure
+- future Stacks-native economic and transaction patterns
+
+The goal is not to overclaim finished blockchain integration.
+The goal is to ship a strong game foundation now while cleanly preparing for:
+- AIBTC-aligned agent tooling
+- x402 on Stacks paid service flows
+- creator economy mechanics
+- ecosystem-driven identity, reputation, and opportunity ingestion
+
+## Architecture Snapshot
+
+```mermaid
+flowchart LR
+  A[Experience Layer] --> B[Game Core]
+  B --> C[AI Layer]
+  B --> D[Persistence Layer]
+  C --> D
+  E[External Integrations] --> D
+
+  A["Experience Layer<br/>maps, art, characters, dialogue UI"]
+  B["Game Core<br/>movement, collisions, quests, items, NPC runtime"]
+  C["AI Layer<br/>Braintrust dialogue, future memory and planning"]
+  D["Persistence Layer<br/>Convex state and normalized cached records"]
+  E["External Integrations<br/>AIBTC, Zero Authority, x402 on Stacks"]
+```
+
+```mermaid
+flowchart LR
+  G[stacks2d / TinyRealms] --> X[AIBTC Adapter]
+  G --> Z[Zero Authority Adapter]
+  G --> P[x402 Adapter]
+  X --> AX[AIBTC services]
+  Z --> ZX[Zero Authority API]
+  P --> PX[x402 API / sponsor relay]
+```
+
 ## Features
 
 - **Shared 2D world** — multiplayer presence, map state, chat, and world data
@@ -128,6 +177,57 @@ The product is being built with clear boundaries:
 This separation is intentional so the worldbuilding and asset pipeline can evolve without coupling the game client directly to external wallet or payment infrastructure.
 
 See [docs/Stacks2D-Architecture.md](docs/Stacks2D-Architecture.md) for diagrams and module boundaries.
+
+### System Diagram
+
+```mermaid
+flowchart LR
+  A[Experience Layer] --> B[Game Core]
+  B --> C[AI Layer]
+  B --> D[Persistence Layer]
+  C --> D
+  E[External Integrations] --> D
+
+  A["Experience Layer<br/>maps, art, characters, dialogue UI"]
+  B["Game Core<br/>movement, collisions, quests, items, NPC runtime"]
+  C["AI Layer<br/>Braintrust dialogue, future memory and planning"]
+  D["Persistence Layer<br/>Convex state and normalized cached records"]
+  E["External Integrations<br/>AIBTC, Zero Authority, x402 on Stacks"]
+```
+
+### Module Boundaries
+
+```mermaid
+flowchart TD
+  R[Apps/tinyrealms]
+  R --> S[src/engine]
+  R --> U[src/ui]
+  R --> L[src/lib]
+  R --> C[convex/story]
+  R --> A[convex/agents]
+  R --> I[convex/integrations]
+  R --> M[convex/mechanics]
+
+  S["src/engine<br/>runtime and rendering"]
+  U["src/ui<br/>screens and presentation"]
+  L["src/lib<br/>shared client helpers"]
+  C["convex/story<br/>AI dialogue and narrative"]
+  A["convex/agents<br/>planned agent sandbox"]
+  I["convex/integrations<br/>planned external adapters"]
+  M["convex/mechanics<br/>items, economy, combat"]
+```
+
+### Stacks Integration Direction
+
+```mermaid
+flowchart LR
+  G[stacks2d / TinyRealms] --> X[AIBTC Adapter]
+  G --> Z[Zero Authority Adapter]
+  G --> P[x402 Adapter]
+  X --> AX[AIBTC services]
+  Z --> ZX[Zero Authority API]
+  P --> PX[x402 API / sponsor relay]
+```
 
 ## Modes
 
