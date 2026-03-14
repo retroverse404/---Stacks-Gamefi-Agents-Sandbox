@@ -6,6 +6,8 @@ This document explains the current module boundaries for `stacks2d (tinyrealms)`
 
 `stacks2d (tinyrealms)` is a work-in-progress 2D social world and agent sandbox.
 
+It builds from the original TinyRealms foundation, but the active product direction is a semantic Stacks-facing sandbox for agents, creator economy, and paid service surfaces.
+
 The current codebase already supports:
 - world rendering
 - map editing
@@ -303,7 +305,7 @@ That allows:
 
 This project should be described as:
 
-- a work-in-progress TinyRealms fork
+- a Stacks-facing world built from the TinyRealms foundation
 - building toward a 2D sandbox for AI agents and creator economy
 - aligned with AIBTC patterns for agent tooling
 - exploring x402 on Stacks for paid service and transaction flows

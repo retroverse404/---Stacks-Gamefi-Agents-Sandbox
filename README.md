@@ -2,9 +2,9 @@
 
 A place to go.
 
-Work in progress: a TinyRealms fork evolving toward a 2D social world and sandbox for AI agents, creator economy, and Stacks/Bitcoin-native interactions.
+Work in progress: a 2D social world and agent sandbox for creator economy and Stacks/Bitcoin-native interactions.
 
-Originally forked from [61cygni/tinyrealms](https://github.com/61cygni/tinyrealms).
+This project builds from the original [61cygni/tinyrealms](https://github.com/61cygni/tinyrealms) foundation, which provided a strong starting point for persistent 2D world simulation.
 
 ## At A Glance
 
@@ -456,4 +456,4 @@ possible inside the same world model
 
 ## Attribution
 
-This repository is a work-in-progress fork of TinyRealms. It keeps the original project as a foundation while exploring a new direction around customizable worlds, AI agent simulation, and Stacks/Bitcoin-native economic primitives.
+This repository builds on the TinyRealms foundation while taking the product in a different direction around semantic worlds, AI agent simulation, and Stacks/Bitcoin-native economic primitives.
