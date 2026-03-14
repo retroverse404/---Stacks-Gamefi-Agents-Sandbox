@@ -126,6 +126,29 @@ Scaffolded but not yet verified live:
 - future Clarity proof contract
 - future AIBTC account execution
 
+## Verified Backend Connector Execution
+
+The Stacks ecosystem connectors are backend-executed and cached before the world consumes them.
+
+```mermaid
+flowchart LR
+  ZA[Zero Authority API] --> ZC[Convex integration cache]
+  TE[Tenero API] --> TC[Convex integration cache]
+  ZC --> Q[normalized queries]
+  TC --> Q
+  Q --> G[guide.btc / quests.btc]
+  Q --> M[market.btc / HUD ticker]
+  Q --> W[World Feed context]
+```
+
+Verified connector paths in the current build:
+- `Zero Authority API -> Convex cache -> guideSnapshot -> guide.btc and quests.btc`
+- `Tenero API -> Convex cache -> tickerRows -> HUD ticker and market.btc`
+
+Verified by runtime/backend queries:
+- `integrations/zeroAuthority:guideSnapshot`
+- `integrations/tenero:tickerRows`
+
 ## Current Status
 
 This repository is intentionally presented as a **work in progress**.

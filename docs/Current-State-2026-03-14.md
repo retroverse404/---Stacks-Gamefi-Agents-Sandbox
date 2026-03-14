@@ -27,6 +27,20 @@ This note is a timestamped implementation snapshot for `stacks2d (tinyrealms)`.
 - `integrations/zeroAuthority:guideSnapshot`
 - `agentRegistry:listAgents`
 
+## Connector Execution Proof
+
+Verified backend execution paths:
+
+- `Tenero API -> Convex integration -> tickerRows -> HUD ticker`
+- `Tenero API -> Convex integration -> tickerRows -> market.btc surface`
+- `Zero Authority API -> Convex integration -> guideSnapshot -> quests.btc surface`
+- `Zero Authority API -> Convex integration -> guideSnapshot -> guide.btc live context`
+
+This is intentionally backend-driven.
+
+The browser is not the source of truth for these connectors.
+Convex is the integration boundary and cache layer.
+
 ## Scaffolded But Not Yet Verified Live
 
 - `services/x402-api` exists as a separate x402 payment boundary

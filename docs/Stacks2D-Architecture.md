@@ -100,6 +100,29 @@ flowchart LR
   P --> PX[services/x402-api]
 ```
 
+## Verified Connector Execution
+
+The current Stacks ecosystem slice already runs through backend adapters rather than direct frontend API calls.
+
+```mermaid
+flowchart LR
+  ZA[Zero Authority API] --> Z[Convex Zero Authority integration]
+  T[Tenero API] --> R[Convex Tenero integration]
+  Z --> C[normalized cached records]
+  R --> C
+  C --> G[guide.btc]
+  C --> Q[quests.btc]
+  C --> M[market.btc]
+  C --> H[HUD ticker]
+```
+
+What is verified:
+- Zero Authority data is cached in Convex and exposed through `guideSnapshot`
+- Tenero token data is cached in Convex and exposed through `tickerRows`
+- the browser consumes those backend queries instead of calling the external APIs directly
+
+This proves real backend connector execution, not just themed UI.
+
 ## Sequential Implementation Order
 
 This is the intended build order. Each layer depends on the previous one.
@@ -114,7 +137,7 @@ flowchart TD
 
   A["Playable world baseline<br/>maps, movement, scenes, UI, save states"]
   B["World semantics<br/>zones, semantic objects, roles, values, events"]
-  C["Ecosystem data adapters<br/>Zero Authority live, Tenero next"]
+  C["Ecosystem data adapters<br/>Zero Authority live, Tenero live"]
   D["Purposeful agents<br/>guide, market, quests, posts, constraints"]
   E["Premium content and x402<br/>offers, paywalls, service endpoints"]
   F["Trading agents and onchain execution<br/>AIBTC accounts, STX, sBTC, USDCx"]
