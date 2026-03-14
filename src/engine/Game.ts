@@ -15,6 +15,10 @@ const PRESENCE_INTERVAL_MS = 250;   // how often to push position to Convex
 const SAVE_INTERVAL_MS = 30_000;   // how often to persist position to profile (was 10s)
 const PRESENCE_MOVE_THRESHOLD = 2; // px — skip presence update if player hasn't moved
 const DEFAULT_ITEM_PICKUP_SFX = "/assets/audio/take-item.mp3";
+const BUILTIN_MAP_ALIASES: Record<string, string> = {
+  "Cozy Cabin": "cozy-cabin",
+  "cozy-cabin": "Cozy Cabin",
+};
 
 /**
  * Main game class. Manages the PixiJS application, camera, map rendering,
@@ -137,6 +141,14 @@ export class Game {
     // Seed any static JSON maps that aren't yet in Convex (skip for guests — read-only)
     if (!this.isGuest) {
       await this.seedStaticMaps();
+      if ((import.meta.env.VITE_CONVEX_URL as string)?.includes("127.0.0.1")) {
+        try {
+          const convex = getConvexClient();
+          await convex.mutation((api as any).localDev.ensureDemoNpc, { mapName: "Cozy Cabin" });
+        } catch (e) {
+          console.warn("Local demo NPC seed failed:", e);
+        }
+      }
     }
 
     // Auto-load the default map
@@ -162,6 +174,34 @@ export class Game {
   /** Known static JSON maps that should be seeded into Convex if missing */
   private static readonly STATIC_MAPS = ["cozy-cabin", "camineet", "mage-city", "palma"];
 
+  private applyBuiltInMapFixups(mapData: MapData) {
+    if (mapData.name !== "Cozy Cabin") return;
+
+    // The bedroom passage on the east side of Cozy Cabin is visually open but
+    // ships with blocked collision tiles in the saved map/static seed.
+    const clearCollision = (tileX: number, tileY: number) => {
+      if (
+        tileX < 0 ||
+        tileY < 0 ||
+        tileX >= mapData.width ||
+        tileY >= mapData.height
+      ) {
+        return;
+      }
+      mapData.collisionMask[tileY * mapData.width + tileX] = false;
+    };
+
+    for (let tileY = 17; tileY <= 26; tileY++) {
+      for (const tileX of [67, 68] as const) {
+        clearCollision(tileX, tileY);
+      }
+    }
+  }
+
+  private getBuiltInMapCandidates(mapName: string) {
+    return Array.from(new Set([mapName, BUILTIN_MAP_ALIASES[mapName]].filter(Boolean))) as string[];
+  }
+
   /**
    * Check each known static map — if it doesn't exist in Convex yet,
    * seed it from the static JSON file. Maps that already exist in Convex
@@ -174,7 +214,12 @@ export class Game {
     const convex = getConvexClient();
     for (const name of Game.STATIC_MAPS) {
       try {
-        const existing = await convex.query(api.maps.getByName, { name });
+        const candidates = this.getBuiltInMapCandidates(name);
+        let existing = null;
+        for (const candidate of candidates) {
+          existing = await convex.query(api.maps.getByName, { name: candidate });
+          if (existing) break;
+        }
         if (existing) continue; // Already in Convex — don't overwrite
 
         const resp = await fetch(`/assets/maps/${name}.json`);
@@ -197,15 +242,20 @@ export class Game {
 
       // Determine which map to load — use the profile's saved map, or default
       const targetMap = this.profile.mapName || "Cozy Cabin";
+      const mapCandidates = this.getBuiltInMapCandidates(targetMap);
       console.log(`Loading map: "${targetMap}" (profile.mapName=${this.profile.mapName})`);
 
       // 1) Try to load from Convex first (saved edits)
       try {
         const convex = getConvexClient();
-        console.log(`[loadDefaultMap] querying Convex for map "${targetMap}"...`);
-        const saved = await convex.query(api.maps.getByName, { name: targetMap });
+        console.log(`[loadDefaultMap] querying Convex for map candidates: ${mapCandidates.join(", ")}...`);
+        let saved = null;
+        for (const candidate of mapCandidates) {
+          saved = await convex.query(api.maps.getByName, { name: candidate });
+          if (saved) break;
+        }
         if (saved) {
-          console.log(`[loadDefaultMap] found "${targetMap}" in Convex (id: ${saved._id})`);
+          console.log(`[loadDefaultMap] found "${saved.name}" in Convex (id: ${saved._id})`);
           mapData = this.convexMapToMapData(saved);
         } else {
           console.warn(`[loadDefaultMap] Convex returned null for "${targetMap}" — map not found by that name`);
@@ -219,12 +269,14 @@ export class Game {
 
       // 2) Fall back to static JSON file
       if (!mapData) {
-        const resp = await fetch(`/assets/maps/${targetMap}.json`);
-        if (resp.ok) {
+        for (const candidate of mapCandidates) {
+          const resp = await fetch(`/assets/maps/${candidate}.json`);
+          if (!resp.ok) continue;
+
           mapData = (await resp.json()) as MapData;
           mapData.portals = mapData.portals ?? [];
           console.warn(
-            `Loaded map "${targetMap}" from static JSON (Convex missing/unavailable)`,
+            `Loaded map "${candidate}" from static JSON (Convex missing/unavailable)`,
           );
           // Auto-seed to Convex (skip for guests)
           if (!this.isGuest) {
@@ -232,10 +284,11 @@ export class Game {
               console.warn("Failed to seed map to Convex:", e),
             );
           }
-        } else {
-          console.warn(
-            `Static JSON not found for map "${targetMap}" (status ${resp.status})`,
-          );
+          break;
+        }
+
+        if (!mapData) {
+          console.warn(`Static JSON not found for map candidates: ${mapCandidates.join(", ")}`);
         }
       }
 
@@ -257,6 +310,7 @@ export class Game {
         return;
       }
 
+      this.applyBuiltInMapFixups(mapData);
       await this.loadMap(mapData!);
       this.currentMapName = mapData!.name || "Cozy Cabin";
       this.currentMapData = mapData!;
@@ -1266,6 +1320,10 @@ export class Game {
             mapObjectId: s.mapObjectId as string,
             spriteDefName: s.spriteDefName,
             instanceName: s.instanceName ?? undefined,
+            npcProfile: (s as any).npcProfile ?? null,
+            currentIntent: (s as any).currentIntent ?? undefined,
+            intentDetail: (s as any).intentDetail ?? undefined,
+            mood: (s as any).mood ?? undefined,
             x: s.x,
             y: s.y,
             vx: s.vx,

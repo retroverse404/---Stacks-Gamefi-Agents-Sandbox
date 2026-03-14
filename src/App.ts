@@ -9,6 +9,9 @@ import { ProfileScreen } from "./ui/ProfileScreen.ts";
 import { GameShell } from "./ui/GameShell.ts";
 import { SplashHost } from "./splash/SplashHost.ts";
 import type { ProfileData } from "./engine/types.ts";
+import { getAuthManager } from "./lib/convexClient.ts";
+
+const LOCAL_DEV_ID_KEY = "__tinyrealmsLocalDevId";
 
 export class App {
   private root: HTMLElement;
@@ -23,7 +26,11 @@ export class App {
     this.convex = convex;
   }
 
-  start() {
+  async start() {
+    if (this.isLocalDev()) {
+      await this.startLocalDev();
+      return;
+    }
     this.showAuthScreen();
   }
 
@@ -68,7 +75,7 @@ export class App {
     this.clear();
     this.profileScreen = new ProfileScreen(
       (profile) => this.showGame(profile),
-      () => this.showAuthScreen(),  // sign-out callback
+      () => this.start(),
     );
     this.root.appendChild(this.profileScreen.el);
   }
@@ -112,5 +119,48 @@ export class App {
 
   destroy() {
     this.clear();
+  }
+
+  private isLocalDev() {
+    return (import.meta.env.VITE_CONVEX_URL as string)?.includes("127.0.0.1");
+  }
+
+  private async startLocalDev() {
+    try {
+      const auth = getAuthManager();
+      const alreadyValid =
+        auth.isAuthenticated() && (await auth.validateSession());
+
+      if (!alreadyValid) {
+        const { email, password } = this.getLocalDevCredentials();
+        await auth.signInPassword(email, password, "signUp");
+        await this.waitForAuth();
+      }
+
+      this.showProfileScreen();
+    } catch (error) {
+      console.error("Local dev bootstrap failed:", error);
+      this.showAuthScreen();
+    }
+  }
+
+  private getLocalDevCredentials() {
+    let localId = localStorage.getItem(LOCAL_DEV_ID_KEY);
+    if (!localId) {
+      localId =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `local-${Math.random().toString(36).slice(2, 10)}`;
+      localStorage.setItem(LOCAL_DEV_ID_KEY, localId);
+    }
+
+    return {
+      email: `local-dev-${localId}@tinyrealms.local`,
+      password: `tinyrealms-${localId}-local-dev`,
+    };
+  }
+
+  private waitForAuth() {
+    return new Promise((resolve) => setTimeout(resolve, 300));
   }
 }

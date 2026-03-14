@@ -9,7 +9,7 @@ import "./index.css";
 const convex = initConvexClient();
 const root = document.getElementById("root")!;
 const app = new App(root, convex);
-app.start();
+void app.start();
 
 // Expose for debugging in dev console
 if (import.meta.env.DEV) {

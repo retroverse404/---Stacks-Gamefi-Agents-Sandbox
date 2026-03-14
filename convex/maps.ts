@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireMapEditor, isMapOwner } from "./lib/requireMapEditor";
 import { requireSuperuser } from "./lib/requireSuperuser";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getRequestUserId } from "./lib/getRequestUserId";
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -34,7 +34,7 @@ export const listPublished = query({
 export const listSummaries = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getRequestUserId(ctx);
     const all = await ctx.db.query("maps").collect();
 
     // Check if the user is a superuser (see all maps)
@@ -84,7 +84,7 @@ export const listSummaries = query({
 export const listStartMaps = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getRequestUserId(ctx);
     const all = await ctx.db.query("maps").collect();
 
     return all
@@ -223,7 +223,7 @@ export const create = mutation({
     mapType: v.optional(mapTypeValidator),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getRequestUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
     const profile = await ctx.db.get(args.profileId);
@@ -307,7 +307,7 @@ export const saveFullMap = mutation({
     mapType: v.optional(mapTypeValidator),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getRequestUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
     await requireMapEditor(ctx, args.profileId, args.name);

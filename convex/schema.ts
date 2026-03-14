@@ -182,6 +182,8 @@ export default defineSchema({
       name: v.string(),
       quantity: v.number(),
     }))),
+    currencies: v.optional(v.record(v.string(), v.number())), // simple in-world wallet for NPC trading
+    desiredItem: v.optional(v.string()),   // lightweight goal for local agent trading
     tags: v.optional(v.array(v.string())), // general-purpose tags (e.g. "shopkeeper", "quest-giver")
     visibilityType: v.optional(v.string()), // "public" | "private" | "system" (legacy undefined => system)
     createdByUser: v.optional(v.id("users")), // owner user for private/public NPC profiles
@@ -322,6 +324,10 @@ export default defineSchema({
     targetX: v.optional(v.float64()),     // wander target (null = idle)
     targetY: v.optional(v.float64()),
     idleUntil: v.optional(v.number()),    // timestamp: don't move until this time
+    currentIntent: v.optional(v.string()), // lightweight agent intent for dialogue/UI
+    intentDetail: v.optional(v.string()),
+    mood: v.optional(v.string()),
+    lastTradeAt: v.optional(v.number()),
     lastTick: v.number(),                 // timestamp of last server update
   })
     .index("by_map", ["mapName"])

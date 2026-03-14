@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getRequestUserId } from "./lib/getRequestUserId";
 import { DEFAULT_START_MAP } from "./maps";
 
 // ---------------------------------------------------------------------------
@@ -11,7 +11,7 @@ import { DEFAULT_START_MAP } from "./maps";
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getRequestUserId(ctx);
     if (!userId) return [];
 
     // Get only this user's profiles
@@ -45,7 +45,7 @@ const DEFAULT_STATS = {
 };
 
 async function requireOwnedProfile(ctx: any, id: any) {
-  const userId = await getAuthUserId(ctx);
+  const userId = await getRequestUserId(ctx);
   if (!userId) throw new Error("Not authenticated");
   const profile = await ctx.db.get(id);
   if (!profile) throw new Error("Profile not found");
@@ -67,7 +67,7 @@ export const create = mutation({
     startLabel: v.optional(v.string()),
   },
   handler: async (ctx, { name, spriteUrl, color, startMapName, startLabel }) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getRequestUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
     // Check for duplicate names (scoped to this user's profiles)
@@ -92,6 +92,15 @@ export const create = mutation({
       startLabel: startLabel ?? "start1",
       createdAt: Date.now(),
     });
+  },
+});
+
+/** Ensure the local-dev fallback user exists before unauthenticated queries run. */
+export const ensureLocalDevUser = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getRequestUserId(ctx);
+    return { userId };
   },
 });
 

@@ -5,8 +5,8 @@
  */
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
 import { requireAdminKey } from "./lib/requireAdminKey";
+import { getRequestUserId } from "./lib/getRequestUserId";
 import { DEFAULT_START_MAP } from "./maps";
 
 const RESTORE_ALLOWED_TABLES = new Set([
@@ -453,7 +453,7 @@ export const cleanupProfileInUse = mutation({
 export const currentUser = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getRequestUserId(ctx);
     if (!userId) return null;
     const user = await ctx.db.get(userId);
     if (!user) return null;
@@ -470,7 +470,7 @@ export const currentUser = query({
 export const myAccountInfo = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getRequestUserId(ctx);
     if (!userId) return null;
     const user = await ctx.db.get(userId);
     if (!user) return null;

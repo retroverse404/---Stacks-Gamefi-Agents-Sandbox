@@ -16,6 +16,9 @@ const TICK_MS = 1500; // server tick interval (ms) — was 500ms, increased to r
 const IDLE_MIN_MS = 3000; // minimum idle pause before next wander
 const IDLE_MAX_MS = 8000; // maximum idle pause
 const STALE_THRESHOLD_MS = TICK_MS * 4; // if no tick in this long, loop is dead
+const TRADE_DISTANCE_PX = 96;
+const TRADE_COOLDOWN_MS = 12000;
+const TRADE_PRICE = 2;
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -25,12 +28,52 @@ const STALE_THRESHOLD_MS = TICK_MS * 4; // if no tick in this long, loop is dead
 export const listByMap = query({
   args: { mapName: v.string() },
   handler: async (ctx, { mapName }) => {
-    return await ctx.db
+    const states = await ctx.db
       .query("npcState")
       .withIndex("by_map", (q) => q.eq("mapName", mapName))
       .collect();
+
+    const profiles = await ctx.db.query("npcProfiles").collect();
+    const profilesByName = new Map(profiles.map((p) => [p.name, p]));
+
+    return states.map((state) => ({
+      ...state,
+      npcProfile: state.instanceName
+        ? profilesByName.get(state.instanceName) ?? null
+        : null,
+    }));
   },
 });
+
+function getItemQuantity(items: { name: string; quantity: number }[] | undefined, itemName: string) {
+  return items?.find((item) => item.name === itemName)?.quantity ?? 0;
+}
+
+function upsertItem(
+  items: { name: string; quantity: number }[] | undefined,
+  itemName: string,
+  delta: number,
+) {
+  const next = [...(items ?? [])];
+  const index = next.findIndex((item) => item.name === itemName);
+  if (index === -1) {
+    if (delta > 0) next.push({ name: itemName, quantity: delta });
+    return next;
+  }
+  const quantity = next[index].quantity + delta;
+  if (quantity <= 0) {
+    next.splice(index, 1);
+  } else {
+    next[index] = { ...next[index], quantity };
+  }
+  return next;
+}
+
+function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
 
 // ---------------------------------------------------------------------------
 // Tick loop (internal — not callable from client)
@@ -45,40 +88,156 @@ export const tick = internalMutation({
 
     const now = Date.now();
     const dt = TICK_MS / 1000; // seconds per tick
+    const allProfiles = await ctx.db.query("npcProfiles").collect();
+    const profilesByName = new Map(allProfiles.map((profile) => [profile.name, profile]));
+    const statesById = new Map(allNpcs.map((npc) => [String(npc._id), npc]));
+    const desiredTargets = new Map<string, { x: number; y: number; detail: string }>();
 
     for (const npc of allNpcs) {
+      if (!npc.instanceName) continue;
+      const profile = profilesByName.get(npc.instanceName);
+      const desiredItem = profile?.desiredItem;
+      if (!profile || !desiredItem || getItemQuantity(profile.items, desiredItem) > 0) continue;
+
+      const seller = allNpcs
+        .filter((other) => other.mapName === npc.mapName && other._id !== npc._id && other.instanceName)
+        .map((other) => ({ state: other, profile: profilesByName.get(other.instanceName!) }))
+        .filter((entry) => entry.profile && getItemQuantity(entry.profile.items, desiredItem) > 0)
+        .sort((a, b) => distance(npc, a.state) - distance(npc, b.state))[0];
+
+      if (seller) {
+        desiredTargets.set(String(npc._id), {
+          x: seller.state.x,
+          y: seller.state.y,
+          detail: `seeking ${desiredItem} from ${seller.profile?.displayName ?? seller.state.instanceName}`,
+        });
+      }
+    }
+
+    for (const npc of allNpcs) {
+      if (!npc.instanceName) continue;
+      const profile = profilesByName.get(npc.instanceName);
+      if (!profile) continue;
+
+      const nearby = allNpcs.filter(
+        (other) =>
+          other.mapName === npc.mapName &&
+          other._id !== npc._id &&
+          other.instanceName &&
+          distance(npc, other) <= TRADE_DISTANCE_PX,
+      );
+
+      for (const other of nearby) {
+        const otherProfile = other.instanceName ? profilesByName.get(other.instanceName) : null;
+        if (!otherProfile) continue;
+        const lastTradeAt = Math.max(npc.lastTradeAt ?? 0, other.lastTradeAt ?? 0);
+        if (now - lastTradeAt < TRADE_COOLDOWN_MS) continue;
+
+        const sellerDesired = otherProfile.desiredItem;
+        if (!sellerDesired) continue;
+        const sellerHas = getItemQuantity(profile.items, sellerDesired);
+        const buyerCoins = otherProfile.currencies?.coins ?? 0;
+        if (sellerHas <= 0 || buyerCoins < TRADE_PRICE) continue;
+
+        await ctx.db.patch(otherProfile._id, {
+          items: upsertItem(otherProfile.items, sellerDesired, 1),
+          currencies: {
+            ...(otherProfile.currencies ?? {}),
+            coins: buyerCoins - TRADE_PRICE,
+          },
+          updatedAt: now,
+        });
+        await ctx.db.patch(profile._id, {
+          items: upsertItem(profile.items, sellerDesired, -1),
+          currencies: {
+            ...(profile.currencies ?? {}),
+            coins: (profile.currencies?.coins ?? 0) + TRADE_PRICE,
+          },
+          updatedAt: now,
+        });
+
+        await ctx.db.patch(npc._id, {
+          currentIntent: "trading",
+          intentDetail: `sold ${sellerDesired} to ${otherProfile.displayName}`,
+          mood: "satisfied",
+          lastTradeAt: now,
+          lastTick: now,
+        });
+        await ctx.db.patch(other._id, {
+          currentIntent: "trading",
+          intentDetail: `bought ${sellerDesired} from ${profile.displayName}`,
+          mood: "curious",
+          lastTradeAt: now,
+          lastTick: now,
+        });
+
+        statesById.set(String(npc._id), { ...npc, lastTradeAt: now });
+        statesById.set(String(other._id), { ...other, lastTradeAt: now });
+        break;
+      }
+    }
+
+    for (const npc of allNpcs) {
+      const refreshed = statesById.get(String(npc._id)) ?? npc;
+      const profile = refreshed.instanceName
+        ? profilesByName.get(refreshed.instanceName)
+        : null;
+      const desiredTarget = desiredTargets.get(String(refreshed._id));
+      const desiredItem = profile?.desiredItem;
+      const hasDesiredItem =
+        !!desiredItem && getItemQuantity(profile?.items, desiredItem) > 0;
+
       // --- Idle check ---
-      if (npc.idleUntil && now < npc.idleUntil) {
+      if (refreshed.idleUntil && now < refreshed.idleUntil) {
         // Still pausing — only patch if velocity needs zeroing (skip no-op writes)
-        if (npc.vx !== 0 || npc.vy !== 0) {
-          await ctx.db.patch(npc._id, { vx: 0, vy: 0, lastTick: now });
+        if (refreshed.vx !== 0 || refreshed.vy !== 0) {
+          await ctx.db.patch(refreshed._id, {
+            vx: 0,
+            vy: 0,
+            currentIntent: hasDesiredItem ? "resting" : desiredTarget ? "seeking-trade" : "idle",
+            intentDetail:
+              desiredTarget?.detail ??
+              (hasDesiredItem ? `holding ${desiredItem}` : "waiting"),
+            mood: hasDesiredItem ? "content" : "curious",
+            lastTick: now,
+          });
         }
         // Otherwise skip entirely — no DB write needed for idle NPCs
         continue;
       }
 
       // --- Pick a new target if we don't have one ---
-      let targetX = npc.targetX;
-      let targetY = npc.targetY;
+      let targetX = refreshed.targetX;
+      let targetY = refreshed.targetY;
 
       if (targetX == null || targetY == null) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = Math.random() * npc.wanderRadius;
-        targetX = npc.spawnX + Math.cos(angle) * dist;
-        targetY = npc.spawnY + Math.sin(angle) * dist;
+        if (desiredTarget) {
+          targetX = desiredTarget.x;
+          targetY = desiredTarget.y;
+        } else {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = Math.random() * refreshed.wanderRadius;
+          targetX = refreshed.spawnX + Math.cos(angle) * dist;
+          targetY = refreshed.spawnY + Math.sin(angle) * dist;
+        }
       }
 
       // --- Move toward target ---
-      const dx = targetX - npc.x;
-      const dy = targetY - npc.y;
+      const dx = targetX - refreshed.x;
+      const dy = targetY - refreshed.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      const step = npc.speed * dt;
+      const step = refreshed.speed * dt;
+      const nextIntent = desiredTarget ? "seeking-trade" : "wandering";
+      const nextDetail =
+        desiredTarget?.detail ??
+        (hasDesiredItem ? `carrying ${desiredItem}` : "wandering nearby");
+      const nextMood = desiredTarget ? "focused" : hasDesiredItem ? "content" : "curious";
 
       if (dist <= step + 1) {
         // Reached target — go idle
         const idleDuration =
           IDLE_MIN_MS + Math.random() * (IDLE_MAX_MS - IDLE_MIN_MS);
-        await ctx.db.patch(npc._id, {
+        await ctx.db.patch(refreshed._id, {
           x: targetX,
           y: targetY,
           vx: 0,
@@ -86,18 +245,23 @@ export const tick = internalMutation({
           targetX: undefined,
           targetY: undefined,
           idleUntil: now + idleDuration,
-          direction: npc.direction, // keep last direction
+          currentIntent: hasDesiredItem ? "resting" : nextIntent,
+          intentDetail: hasDesiredItem
+            ? `holding ${desiredItem}`
+            : desiredTarget?.detail ?? "taking a pause",
+          mood: hasDesiredItem ? "content" : nextMood,
+          direction: refreshed.direction, // keep last direction
           lastTick: now,
         });
       } else {
         // Step toward target
         const ratio = step / dist;
-        const newX = npc.x + dx * ratio;
-        const newY = npc.y + dy * ratio;
+        const newX = refreshed.x + dx * ratio;
+        const newY = refreshed.y + dy * ratio;
 
         // Velocity for client extrapolation
-        const vx = (dx / dist) * npc.speed;
-        const vy = (dy / dist) * npc.speed;
+        const vx = (dx / dist) * refreshed.speed;
+        const vy = (dy / dist) * refreshed.speed;
 
         // Determine facing direction
         const direction =
@@ -109,7 +273,7 @@ export const tick = internalMutation({
               ? "down"
               : "up";
 
-        await ctx.db.patch(npc._id, {
+        await ctx.db.patch(refreshed._id, {
           x: newX,
           y: newY,
           vx,
@@ -117,6 +281,9 @@ export const tick = internalMutation({
           targetX,
           targetY,
           direction,
+          currentIntent: nextIntent,
+          intentDetail: nextDetail,
+          mood: nextMood,
           idleUntil: undefined,
           lastTick: now,
         });

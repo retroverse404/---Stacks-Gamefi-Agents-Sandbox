@@ -14,3 +14,19 @@
   display: block;
   image-rendering: pixelated;
 }
+
+.debug-panel {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 1200;
+  max-width: min(90vw, 560px);
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(8, 10, 18, 0.88);
+  color: #d7deee;
+  font: 12px/1.4 monospace;
+  pointer-events: none;
+  white-space: normal;
+}

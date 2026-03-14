@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireSuperuser } from "./lib/requireSuperuser";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getRequestUserId } from "./lib/getRequestUserId";
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -148,7 +148,7 @@ export const pickup = mutation({
     worldItemId: v.id("worldItems"),
   },
   handler: async (ctx, { profileId, worldItemId }) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getRequestUserId(ctx);
     if (!userId) return { success: false, reason: "Not authenticated" };
 
     const worldItem = await ctx.db.get(worldItemId);

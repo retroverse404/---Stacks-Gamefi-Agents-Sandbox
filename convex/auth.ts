@@ -1,7 +1,84 @@
 import GitHub from "@auth/core/providers/github";
-import { Password } from "@convex-dev/auth/providers/Password";
-import { convexAuth } from "@convex-dev/auth/server";
+import { ConvexCredentials } from "@convex-dev/auth/providers/ConvexCredentials";
+import {
+  convexAuth,
+  createAccount,
+  modifyAccountCredentials,
+  retrieveAccount,
+} from "@convex-dev/auth/server";
+import { Scrypt } from "lucia";
+
+function isLocalDeployment() {
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
+    ?.env;
+  const deployment = env?.CONVEX_DEPLOYMENT ?? "";
+  const siteUrl = env?.CONVEX_SITE_URL ?? "";
+  return (
+    deployment.startsWith("local:") ||
+    siteUrl.includes("127.0.0.1") ||
+    siteUrl.includes("localhost")
+  );
+}
+
+const PasswordWithLocalReset = ConvexCredentials({
+  id: "password",
+  authorize: async (params, ctx) => {
+    const flow = params.flow as string | undefined;
+    const email = String(params.email ?? "").trim().toLowerCase();
+    const password = String(params.password ?? "");
+
+    if (!email) throw new Error("Email is required");
+    if (!password) throw new Error("Password is required");
+
+    if (flow === "signUp") {
+      if (password.length < 8) {
+        throw new Error("Password must be at least 8 characters");
+      }
+      try {
+        const created = await createAccount(ctx, {
+          provider: "password",
+          account: { id: email, secret: password },
+          profile: { email },
+        });
+        return { userId: created.user._id };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (!isLocalDeployment() || !message.includes("already exists")) {
+          throw error;
+        }
+
+        await modifyAccountCredentials(ctx, {
+          provider: "password",
+          account: { id: email, secret: password },
+        });
+        const retrieved = await retrieveAccount(ctx, {
+          provider: "password",
+          account: { id: email, secret: password },
+        });
+        return { userId: retrieved.user._id };
+      }
+    }
+
+    if (flow === "signIn") {
+      const retrieved = await retrieveAccount(ctx, {
+        provider: "password",
+        account: { id: email, secret: password },
+      });
+      return { userId: retrieved.user._id };
+    }
+
+    throw new Error(`Unsupported password flow "${flow ?? "unknown"}"`);
+  },
+  crypto: {
+    async hashSecret(secret: string) {
+      return await new Scrypt().hash(secret);
+    },
+    async verifySecret(secret: string, hash: string) {
+      return await new Scrypt().verify(hash, secret);
+    },
+  },
+});
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [GitHub, Password],
+  providers: [GitHub, PasswordWithLocalReset],
 });

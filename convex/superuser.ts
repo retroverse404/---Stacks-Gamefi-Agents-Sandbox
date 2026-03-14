@@ -1,9 +1,9 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getRequestUserId } from "./lib/getRequestUserId";
 
 async function requireOwnedSuperuserProfile(ctx: any, profileId: any) {
-  const userId = await getAuthUserId(ctx);
+  const userId = await getRequestUserId(ctx);
   if (!userId) throw new Error("Not authenticated");
   const profile = await ctx.db.get(profileId);
   if (!profile) throw new Error("Profile not found");

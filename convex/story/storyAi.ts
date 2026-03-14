@@ -4,6 +4,16 @@ import { action } from "../_generated/server";
 // Braintrust AI Proxy for LLM-assisted narrative generation
 // Uses the Braintrust proxy endpoint for chat completions
 
+function getBraintrustConfig() {
+  const env = (globalThis as any)?.process?.env ?? {};
+  const apiKey = env.BRAINTRUST_API_KEY as string | undefined;
+  const model = (env.BRAINTRUST_MODEL as string | undefined) || "gemini-2.5-flash";
+
+  if (!apiKey) throw new Error("BRAINTRUST_API_KEY not configured");
+
+  return { apiKey, model };
+}
+
 export const generateDialogue = action({
   args: {
     systemPrompt: v.string(),
@@ -11,8 +21,7 @@ export const generateDialogue = action({
     conversationHistory: v.optional(v.any()),
   },
   handler: async (_ctx, { systemPrompt, userMessage, conversationHistory }) => {
-    const apiKey = (globalThis as any)?.process?.env?.BRAINTRUST_API_KEY as string | undefined;
-    if (!apiKey) throw new Error("BRAINTRUST_API_KEY not configured");
+    const { apiKey, model } = getBraintrustConfig();
 
     const messages: any[] = [{ role: "system", content: systemPrompt }];
 
@@ -22,7 +31,7 @@ export const generateDialogue = action({
     messages.push({ role: "user", content: userMessage });
 
     const response = await fetch(
-      "https://api.braintrust.dev/v1/chat/completions",
+      "https://api.braintrust.dev/v1/proxy/chat/completions",
       {
         method: "POST",
         headers: {
@@ -30,7 +39,7 @@ export const generateDialogue = action({
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: "gpt-4o",
+          model,
           messages,
           max_tokens: 500,
         }),
@@ -38,7 +47,8 @@ export const generateDialogue = action({
     );
 
     if (!response.ok) {
-      throw new Error(`Braintrust API error: ${response.status}`);
+      const details = await response.text();
+      throw new Error(`Braintrust API error: ${response.status} ${details}`);
     }
 
     const data = await response.json();
@@ -58,8 +68,7 @@ export const expandNarrative = action({
     ),
   },
   handler: async (_ctx, { prompt, context, type }) => {
-    const apiKey = (globalThis as any)?.process?.env?.BRAINTRUST_API_KEY as string | undefined;
-    if (!apiKey) throw new Error("BRAINTRUST_API_KEY not configured");
+    const { apiKey, model } = getBraintrustConfig();
 
     const systemPrompts: Record<string, string> = {
       quest:
@@ -78,7 +87,7 @@ export const expandNarrative = action({
     ];
 
     const response = await fetch(
-      "https://api.braintrust.dev/v1/chat/completions",
+      "https://api.braintrust.dev/v1/proxy/chat/completions",
       {
         method: "POST",
         headers: {
@@ -86,7 +95,7 @@ export const expandNarrative = action({
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: "gpt-4o",
+          model,
           messages,
           max_tokens: 1000,
         }),
@@ -94,7 +103,8 @@ export const expandNarrative = action({
     );
 
     if (!response.ok) {
-      throw new Error(`Braintrust API error: ${response.status}`);
+      const details = await response.text();
+      throw new Error(`Braintrust API error: ${response.status} ${details}`);
     }
 
     const data = await response.json();

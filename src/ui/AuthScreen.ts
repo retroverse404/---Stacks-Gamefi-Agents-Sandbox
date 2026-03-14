@@ -16,6 +16,7 @@ export class AuthScreen {
   private onAuthenticated: () => void;
   private onGuestJoin: (() => void) | null;
   private destroyed = false;
+  private lastPasswordFlow: "signIn" | "signUp" = "signIn";
 
   constructor(onAuthenticated: () => void, onGuestJoin?: () => void) {
     this.onAuthenticated = onAuthenticated;
@@ -65,16 +66,18 @@ export class AuthScreen {
     const signInBtn = document.createElement("button");
     signInBtn.className = "auth-btn primary";
     signInBtn.textContent = "Sign In";
-    signInBtn.addEventListener("click", () =>
-      this.handlePassword(emailInput, passwordInput, "signIn", signInBtn, signUpBtn),
-    );
+    signInBtn.addEventListener("click", () => {
+      this.lastPasswordFlow = "signIn";
+      this.handlePassword(emailInput, passwordInput, "signIn", signInBtn, signUpBtn);
+    });
 
     const signUpBtn = document.createElement("button");
     signUpBtn.className = "auth-btn secondary";
     signUpBtn.textContent = "Sign Up";
-    signUpBtn.addEventListener("click", () =>
-      this.handlePassword(emailInput, passwordInput, "signUp", signUpBtn, signInBtn),
-    );
+    signUpBtn.addEventListener("click", () => {
+      this.lastPasswordFlow = "signUp";
+      this.handlePassword(emailInput, passwordInput, "signUp", signUpBtn, signInBtn);
+    });
 
     pwBtnRow.append(signInBtn, signUpBtn);
     form.appendChild(pwBtnRow);
@@ -83,7 +86,11 @@ export class AuthScreen {
     // Submit on Enter key
     const handleEnter = (e: KeyboardEvent) => {
       if (e.key === "Enter") {
-        signInBtn.click();
+        if (this.lastPasswordFlow === "signUp") {
+          signUpBtn.click();
+        } else {
+          signInBtn.click();
+        }
       }
     };
     emailInput.addEventListener("keydown", handleEnter);
@@ -202,7 +209,7 @@ export class AuthScreen {
       await this.waitForAuth();
       this.done();
     } catch (err: any) {
-      const msg = err.message || `Failed to ${flow === "signUp" ? "create account" : "sign in"}`;
+      const msg = this.getAuthErrorMessage(err, flow);
       this.showStatus(msg, true);
       primaryBtn.disabled = false;
       secondaryBtn.disabled = false;
@@ -235,6 +242,23 @@ export class AuthScreen {
   private showStatus(text: string, isError = false) {
     this.statusEl.textContent = text;
     this.statusEl.className = `auth-status${isError ? " error" : ""}`;
+  }
+
+  private getAuthErrorMessage(err: unknown, flow: "signIn" | "signUp") {
+    const message =
+      err && typeof err === "object" && "message" in err ? String((err as any).message) : "";
+
+    if (message.includes("InvalidSecret") || message.includes("Invalid credentials")) {
+      return flow === "signUp"
+        ? "That email already exists. In local dev, click Sign Up again to reset its password."
+        : "Invalid email or password.";
+    }
+
+    if (message.includes("already exists")) {
+      return "That email already exists. In local dev, Sign Up resets the password for it.";
+    }
+
+    return message || `Failed to ${flow === "signUp" ? "create account" : "sign in"}`;
   }
 
   destroy() {

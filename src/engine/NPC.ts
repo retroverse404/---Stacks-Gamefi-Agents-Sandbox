@@ -38,6 +38,8 @@ export interface NPCConfig {
   wanderRadius?: number;
   /** Direction-to-animation row mapping (override if sheet layout differs) */
   directionMap?: Record<Direction, string>;
+  /** Rendering scale multiplier */
+  scale?: number;
   /** Dialogue lines for this NPC */
   dialogue: DialogueLine[];
   /** Sound to play when the player starts chatting (e.g. chicken cluck) */
@@ -83,6 +85,7 @@ export class NPC {
   private speed: number;
   private wanderRadius: number;
   private dirMap: Record<Direction, string>;
+  private scale: number;
 
   private sprite: AnimatedSprite | null = null;
   private spritesheet: Spritesheet | null = null;
@@ -119,6 +122,7 @@ export class NPC {
     this.speed = config.speed ?? 40;
     this.wanderRadius = config.wanderRadius ?? 80;
     this.dirMap = config.directionMap ?? DEFAULT_DIR_ANIM;
+    this.scale = config.scale ?? 1;
     this.dialogue = config.dialogue;
     this.interactSoundUrl = config.interactSoundUrl;
     this.ambientSoundUrl = config.ambientSoundUrl;
@@ -187,6 +191,7 @@ export class NPC {
       this.sprite = new AnimatedSprite(frames);
       this.sprite.animationSpeed = ANIM_SPEED;
       this.sprite.anchor.set(0.5, 1);
+      this.sprite.scale.set(this.scale);
       this.sprite.gotoAndStop(0); // idle
 
       // Remove fallback
@@ -199,8 +204,8 @@ export class NPC {
       this.container.addChild(this.sprite);
 
       // Reposition labels for sprite height
-      this.nameLabel.y = -50;
-      this.promptLabel.y = -62;
+      this.nameLabel.y = -48 * this.scale - 2;
+      this.promptLabel.y = -60 * this.scale - 2;
     } catch (err) {
       console.warn(`Failed to load NPC sprite: ${sheetPath}`, err);
     }

@@ -1,33 +1,54 @@
-# Tiny Realms
+# stacks2d (tinyrealms)
 
-A persistent shared-world 2D RPG built with PixiJS, React, and Convex.
+A place to go.
+
+Work in progress: a TinyRealms fork evolving toward a 2D social world and sandbox for AI agents, creator economy, and Stacks/Bitcoin-native interactions.
+
+Originally forked from [61cygni/tinyrealms](https://github.com/61cygni/tinyrealms).
 
 ## Features
 
-- **Multiplayer persistent world** — shared map, real-time player positions, durable state
-- **Integrated map editor** — paint tiles, set collision, define zones, all saved to Convex in real-time
-- **Sprite editor** — import sprite sheets, define frames and animations, export PixiJS-compatible JSON
-- **Splash screen system** — generic overlay system for dialogue, combat, shops, inventory, cutscenes
-- **Story engine** — human-authored quests and dialogue trees, LLM-assisted narrative via Braintrust
-- **Combat engine** — turn-based, server-authoritative combat with client-side preview
-- **Economy** — wallets, shops, loot tables
-- **Spatial audio** — Web Audio API with distance-based attenuation
-- **Auth** — Convex Auth with GitHub OAuth
+- **Shared 2D world** — multiplayer presence, map state, chat, and world data
+- **Integrated map editor** — paint tiles, set collision, define zones, and save maps live to Convex
+- **Sprite pipeline** — import sprite sheets, define animations, and render custom characters
+- **NPC runtime** — server-authoritative NPC state with wandering, intent, and lightweight trading
+- **AI narrative path** — Braintrust-backed dialogue and narrative generation
+- **Economy primitives** — items, loot, shops, and in-world wallet records
+- **Customizable foundation** — designed to support custom levels, custom characters, and future modular integrations
+
+## Current Status
+
+This repository is intentionally presented as a **work in progress**.
+
+What is working now:
+- web client and Convex backend
+- local development flow
+- map loading and editing
+- multiplayer presence foundations
+- NPC runtime loop
+- Braintrust-backed AI actions
+
+What is planned next:
+- deeper AI agent sandbox logic
+- external ecosystem ingestion
+- AIBTC-aligned agent tooling
+- x402 on Stacks transaction flows
+- future wallet integrations
 
 ## Tech Stack
 
-- **Frontend**: Vite + React + TypeScript
+- **Frontend**: Vite + TypeScript
 - **Rendering**: PixiJS v8
 - **Backend**: Convex (database, real-time, file storage, auth)
-- **AI**: Braintrust AI Proxy (NPC dialogue, narrative generation)
+- **AI**: Braintrust AI Proxy
+- **Future Stacks direction**: AIBTC patterns, x402 on Stacks, and modular external adapters
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
-- A [Convex](https://convex.dev) account
-- A GitHub OAuth app (for auth)
+- A [Convex](https://convex.dev) account for cloud workflows, or local Convex for offline/local development
 - Optionally, a [Braintrust](https://braintrust.dev) API key (for NPC AI)
 
 ### Setup
@@ -39,17 +60,18 @@ A persistent shared-world 2D RPG built with PixiJS, React, and Convex.
 
 2. Initialize Convex:
    ```bash
-   npx convex dev
+   npx convex dev --local
    ```
-   This will prompt you to create a new Convex project and generate the `_generated` types.
+   This starts a local Convex deployment and generates the `_generated` types.
 
 3. Set up environment variables:
    - Copy `.env.local.example` to `.env.local` and fill in `VITE_CONVEX_URL`
-   - In the Convex dashboard, set these environment variables:
-     - `AUTH_GITHUB_ID` — your GitHub OAuth App ID
-     - `AUTH_GITHUB_SECRET` — your GitHub OAuth App Secret
-     - `SITE_URL` — `http://localhost:5173` (for local dev)
-     - `BRAINTRUST_API_KEY` — (optional) your Braintrust API key
+   - In Convex, set these environment variables as needed:
+     - `JWT_PRIVATE_KEY` — local auth signing key
+     - `JWKS` — local auth verification key set
+     - `ADMIN_API_KEY` — local admin helper key
+     - `BRAINTRUST_API_KEY` — optional AI key
+     - `BRAINTRUST_MODEL` — optional model override
 
 4. Run the dev server:
    ```bash
@@ -62,15 +84,19 @@ A persistent shared-world 2D RPG built with PixiJS, React, and Convex.
 ```
 convex/               Convex backend
 ├── schema.ts         Database schema (all tables)
-├── auth.ts           Convex Auth config (GitHub OAuth)
+├── auth.ts           Auth configuration
 ├── maps.ts           Map CRUD
 ├── players.ts        Player persistence
 ├── presence.ts       Real-time position sync
+├── npcEngine.ts      Server-authoritative NPC runtime loop
+├── npcProfiles.ts    NPC profile records and metadata
 ├── story/            Narrative backend
 │   ├── quests.ts
 │   ├── dialogue.ts
 │   ├── events.ts
 │   └── storyAi.ts    Braintrust LLM actions
+├── agents/           Planned agent sandbox modules
+├── integrations/     Planned external adapters (AIBTC, Zero Authority, x402)
 └── mechanics/        Game mechanics backend
     ├── items.ts
     ├── inventory.ts
@@ -85,29 +111,30 @@ src/                  Frontend
 │   ├── MapRenderer.ts
 │   ├── EntityLayer.ts
 │   └── InputManager.ts
-├── editor/           Map editor UI
-├── sprited/          Sprite editor UI
-├── splash/           Splash screen system
-│   ├── SplashManager.ts
-│   ├── SplashHost.tsx
-│   └── screens/      Concrete splash screens
-├── story/            Story engine + content
-│   ├── StoryEngine.ts
-│   ├── DialogueRunner.ts
-│   └── content/      Hand-authored narrative files
-├── mechanics/        Game mechanics engine
-│   ├── CombatEngine.ts
-│   ├── StatBlock.ts
-│   └── Economy.ts
-├── hooks/            React hooks for Convex
-├── lib/              Shared utilities
-└── ui/               HUD, chat, mode toggle
+├── lib/              Shared client helpers
+├── splash/           Overlay / splash screen system
+└── ui/               HUD, chat, auth, profile, and mode controls
 ```
+
+## Architecture Direction
+
+The product is being built with clear boundaries:
+
+- **Experience layer** — maps, characters, scenes, dialogue presentation
+- **Game core** — movement, collisions, items, quests, NPC runtime state
+- **AI layer** — Braintrust-backed dialogue and future agent memory / planning
+- **Integration layer** — future AIBTC, Zero Authority, and x402 on Stacks adapters
+
+This separation is intentional so the worldbuilding and asset pipeline can evolve without coupling the game client directly to external wallet or payment infrastructure.
+
+See [docs/Stacks2D-Architecture.md](docs/Stacks2D-Architecture.md) for diagrams and module boundaries.
 
 ## Modes
 
-- **Play** — explore the world, interact with NPCs, engage in combat
-- **Build** — edit the map (paint tiles, set collision, define zones)
-- **Sprites** — create and edit sprite sheets for animations
+- **Play** — explore the world and interact with characters
+- **Build** — edit the map, collision, and placement data
+- **Sprites** — define and preview custom sprite animations
 
-Toggle between modes using the toolbar in the top-left corner.
+## Attribution
+
+This repository is a work-in-progress fork of TinyRealms. It keeps the original project as a foundation while exploring a new direction around customizable worlds, AI agent simulation, and Stacks/Bitcoin-native economic primitives.

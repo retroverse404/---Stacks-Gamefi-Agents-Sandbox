@@ -25,6 +25,7 @@
     "dump:maps": "node scripts/dump-maps.mjs",
     "maps:list": "node scripts/list-maps.mjs",
     "npcs:list": "node scripts/list-npcs.mjs",
+    "audit:collision": "node scripts/audit-collision.mjs",
     "backup:world": "node scripts/backup-world.mjs",
     "restore:world": "node scripts/restore-world.mjs",
     "audit:maps": "node scripts/admin-run.mjs migrations:auditMapSizes",

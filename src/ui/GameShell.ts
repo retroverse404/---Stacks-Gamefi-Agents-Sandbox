@@ -21,6 +21,8 @@ export class GameShell {
   private game: Game | null = null;
   private mode: AppMode = "play";
   private profile: ProfileData;
+  private debugPanel: HTMLElement | null = null;
+  private debugTimer: ReturnType<typeof setInterval> | null = null;
 
   // UI panels
   private hud!: HUD;
@@ -112,6 +114,10 @@ export class GameShell {
     this.hud = new HUD(this.mode);
     this.el.appendChild(this.hud.el);
 
+    if (import.meta.env.DEV) {
+      this.buildDebugPanel();
+    }
+
     // --- Guests get a minimal play-only UI (no chat, editors, or character panel) ---
     if (!isGuest) {
       // Chat panel (play mode only)
@@ -189,12 +195,41 @@ export class GameShell {
     this.el.appendChild(wrap);
   }
 
+  private buildDebugPanel() {
+    this.debugPanel = document.createElement("div");
+    this.debugPanel.className = "debug-panel";
+    this.el.appendChild(this.debugPanel);
+
+    this.debugTimer = setInterval(() => {
+      const game = this.game;
+      if (!game || !this.debugPanel) return;
+
+      const x = Math.round(game.entityLayer.playerX);
+      const y = Math.round(game.entityLayer.playerY);
+      const collision = game.entityLayer.getCollisionDebugInfo();
+      const tile = collision.center;
+      const cornerSummary = [
+        `TL:${collision.corners.tl.tileX},${collision.corners.tl.tileY}${collision.corners.tl.blocked ? "#" : ""}`,
+        `TR:${collision.corners.tr.tileX},${collision.corners.tr.tileY}${collision.corners.tr.blocked ? "#" : ""}`,
+        `BL:${collision.corners.bl.tileX},${collision.corners.bl.tileY}${collision.corners.bl.blocked ? "#" : ""}`,
+        `BR:${collision.corners.br.tileX},${collision.corners.br.tileY}${collision.corners.br.blocked ? "#" : ""}`,
+      ].join(" ");
+
+      this.debugPanel.textContent =
+        `Map: ${game.currentMapName} | X:${x} Y:${y} | Tile:${tile.tileX},${tile.tileY} | Center:${collision.centerBlocked ? "yes" : "no"} | Box:${collision.boxBlocked ? "yes" : "no"} | ${cornerSummary}`;
+    }, 150);
+  }
+
   show() { this.el.style.display = ""; }
   hide() { this.el.style.display = "none"; }
 
   destroy() {
     if (this.muteKeyHandler) {
       document.removeEventListener("keydown", this.muteKeyHandler);
+    }
+    if (this.debugTimer) {
+      clearInterval(this.debugTimer);
+      this.debugTimer = null;
     }
     this.game?.destroy();
     this.game = null;

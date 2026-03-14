@@ -46,8 +46,8 @@ interface RemoteSnapshot {
 // Player collision box (relative to anchor at bottom-center of sprite).
 // The original checks two points per direction to form a thin bounding box
 // around the character's feet.
-const COL_HALF_W = 6;  // half-width of collision box
-const COL_TOP = -12;   // top of collision box (above feet)
+const COL_HALF_W = 5;  // slightly narrower to reduce snagging on tight corners
+const COL_TOP = -10;   // keep collision focused on the player's feet
 const COL_BOT = 0;     // bottom of collision box (at feet)
 
 /** Maps our Direction to the villager sprite sheet row animations */
@@ -301,6 +301,18 @@ export class EntityLayer {
       mapObjectId: string;
       spriteDefName: string;
       instanceName?: string;
+      npcProfile?: {
+        displayName?: string;
+        title?: string;
+        personality?: string;
+        knowledge?: string;
+        desiredItem?: string;
+        currencies?: Record<string, number>;
+        items?: { name: string; quantity: number }[];
+      } | null;
+      currentIntent?: string;
+      intentDetail?: string;
+      mood?: string;
       x: number;
       y: number;
       vx: number;
@@ -321,6 +333,7 @@ export class EntityLayer {
         npcDirUp?: string;
         npcDirLeft?: string;
         npcDirRight?: string;
+        scale?: number;
         npcGreeting?: string;
         interactSoundUrl?: string;
         ambientSoundUrl?: string;
@@ -348,10 +361,11 @@ export class EntityLayer {
         if (!def) continue;
 
         // Use instance name when available, otherwise fall back to sprite def name
-        const displayName = s.instanceName || def.name;
-
-        const greeting =
-          def.npcGreeting || `Hello! I'm ${displayName}. I don't have much to say yet.`;
+        const displayName =
+          s.npcProfile?.displayName || s.instanceName || def.name;
+        const greeting = this.buildNpcGreeting(displayName, def.npcGreeting, s.npcProfile);
+        const loreText = this.buildNpcLore(s.npcProfile, s.currentIntent, s.intentDetail);
+        const tradeText = this.buildNpcTradeStatus(s.npcProfile, s.currentIntent);
 
         const dialogue: DialogueLine[] = [
           {
@@ -360,15 +374,24 @@ export class EntityLayer {
             responses: [
               { text: "Nice to meet you!", nextId: "bye" },
               { text: "Tell me more about this place.", nextId: "lore" },
+              { text: "What are you up to?", nextId: "trade" },
               { text: "See you around.", nextId: "bye" },
             ],
           },
           {
             id: "lore",
-            text: "There's not much I know yet... but I'm sure the world will reveal its secrets in time.",
+            text: loreText,
             responses: [
               { text: "I'll keep exploring then.", nextId: "bye" },
               { text: "Thanks for the hint.", nextId: "bye" },
+            ],
+          },
+          {
+            id: "trade",
+            text: tradeText,
+            responses: [
+              { text: "Interesting.", nextId: "bye" },
+              { text: "Tell me more about this place.", nextId: "lore" },
             ],
           },
           {
@@ -391,6 +414,7 @@ export class EntityLayer {
             left: def.npcDirLeft ?? "row3",
             right: def.npcDirRight ?? "row2",
           },
+          scale: def.scale ?? 1,
           interactSoundUrl: def.interactSoundUrl,
           ambientSoundUrl: def.ambientSoundUrl,
           ambientSoundRadius: def.ambientSoundRadius,
@@ -409,6 +433,59 @@ export class EntityLayer {
     for (const npc of toRemove) {
       this.removeNPC(npc.id);
     }
+  }
+
+  private buildNpcGreeting(
+    displayName: string,
+    defaultGreeting?: string,
+    profile?: {
+      title?: string;
+      personality?: string;
+    } | null,
+  ) {
+    const title = profile?.title?.trim();
+    const personality = profile?.personality?.trim();
+    if (defaultGreeting) return defaultGreeting;
+    if (title && personality) {
+      return `I'm ${displayName}, the ${title}. People say I'm ${personality}.`;
+    }
+    if (title) {
+      return `I'm ${displayName}, the ${title}. Welcome.`;
+    }
+    return `Hello! I'm ${displayName}.`;
+  }
+
+  private buildNpcLore(
+    profile?: { knowledge?: string } | null,
+    currentIntent?: string,
+    intentDetail?: string,
+  ) {
+    const knowledge = profile?.knowledge?.trim();
+    if (knowledge && intentDetail) return `${knowledge} Right now I'm ${currentIntent ?? "busy"}: ${intentDetail}.`;
+    if (knowledge) return knowledge;
+    if (intentDetail) return `Right now I'm ${currentIntent ?? "busy"}: ${intentDetail}.`;
+    return "There's not much I know yet... but I'm sure the world will reveal its secrets in time.";
+  }
+
+  private buildNpcTradeStatus(
+    profile?: {
+      desiredItem?: string;
+      currencies?: Record<string, number>;
+      items?: { name: string; quantity: number }[];
+    } | null,
+    currentIntent?: string,
+  ) {
+    const desiredItem = profile?.desiredItem;
+    const coins = profile?.currencies?.coins ?? 0;
+    const inventory =
+      profile?.items?.map((item) => `${item.quantity} ${item.name}`).join(", ") || "nothing much";
+    if (currentIntent === "trading") {
+      return `I'm in the middle of a trade. I have ${inventory} and ${coins} coins right now.`;
+    }
+    if (desiredItem) {
+      return `I'm currently ${currentIntent === "seeking-trade" ? "looking around" : "thinking"} for ${desiredItem}. I have ${inventory} and ${coins} coins.`;
+    }
+    return `I'm carrying ${inventory} and ${coins} coins.`;
   }
 
   removeNPC(id: string) {
@@ -645,6 +722,36 @@ export class EntityLayer {
     );
   }
 
+  getCollisionDebugInfo(px = this.playerX, py = this.playerY) {
+    const mr = this.game.mapRenderer;
+    const center = mr.worldToTile(px, py);
+    const left = px - COL_HALF_W;
+    const right = px + COL_HALF_W;
+    const top = py + COL_TOP;
+    const bot = py + COL_BOT;
+
+    const tl = mr.worldToTile(left, top);
+    const tr = mr.worldToTile(right, top);
+    const bl = mr.worldToTile(left, bot);
+    const br = mr.worldToTile(right, bot);
+
+    return {
+      center,
+      centerBlocked: mr.isCollision(center.tileX, center.tileY),
+      corners: {
+        tl: { ...tl, blocked: mr.isCollision(tl.tileX, tl.tileY) },
+        tr: { ...tr, blocked: mr.isCollision(tr.tileX, tr.tileY) },
+        bl: { ...bl, blocked: mr.isCollision(bl.tileX, bl.tileY) },
+        br: { ...br, blocked: mr.isCollision(br.tileX, br.tileY) },
+      },
+      boxBlocked:
+        mr.isCollision(tl.tileX, tl.tileY) ||
+        mr.isCollision(tr.tileX, tr.tileY) ||
+        mr.isCollision(bl.tileX, bl.tileY) ||
+        mr.isCollision(br.tileX, br.tileY),
+    };
+  }
+
   private updateNPCInteraction(input: InputManager) {
     // Find nearest NPC within interact radius
     let nearest: NPC | null = null;
@@ -667,8 +774,8 @@ export class EntityLayer {
       nearest.setPromptVisible(true);
     }
 
-    // Interact on E press (guests can't talk to NPCs)
-    if (nearest && !this.game.isGuest && (input.wasJustPressed("e") || input.wasJustPressed("E"))) {
+    // Guests are read-only, but dialogue is safe and should still work.
+    if (nearest && (input.wasJustPressed("e") || input.wasJustPressed("E"))) {
       this.startDialogue(nearest);
     }
   }

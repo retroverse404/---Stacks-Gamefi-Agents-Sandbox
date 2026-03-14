@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getRequestUserId } from "./lib/getRequestUserId";
 
 const visibilityTypeValidator = v.union(
   v.literal("public"),
@@ -32,7 +32,7 @@ async function isSuperuserUser(ctx: any, userId: string | null): Promise<boolean
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getRequestUserId(ctx);
     const superuser = await isSuperuserUser(ctx, userId);
     const all = await ctx.db.query("spriteDefinitions").collect();
     if (superuser) return all;
@@ -44,7 +44,7 @@ export const list = query({
 export const getByName = query({
   args: { name: v.string() },
   handler: async (ctx, { name }) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getRequestUserId(ctx);
     const superuser = await isSuperuserUser(ctx, userId);
     const def = await ctx.db
       .query("spriteDefinitions")
@@ -101,7 +101,7 @@ export const save = mutation({
     visibilityType: v.optional(visibilityTypeValidator),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getRequestUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
     const profile = await ctx.db.get(args.profileId);
@@ -159,7 +159,7 @@ export const remove = mutation({
     id: v.id("spriteDefinitions"),
   },
   handler: async (ctx, { profileId, id }) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await getRequestUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
     const profile = await ctx.db.get(profileId);
     if (!profile) throw new Error("Profile not found");
