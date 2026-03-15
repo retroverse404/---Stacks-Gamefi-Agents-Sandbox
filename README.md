@@ -122,9 +122,16 @@ Verified live in the current build:
 - premium offer metadata is real in Convex
 - premium UI is real in the world
 
-Scaffolded but not yet verified live:
-- `services/x402-api` for premium payment-required endpoints
-- guide premium payment execution
+Verified locally:
+- `services/x402-api` serves a real x402 v2 payment boundary for `guide.btc`
+- the browser reads the `402 Payment Required` challenge
+- a connected Stacks testnet wallet can sign the payment
+- the signed retry settles through the service-local facilitator fallback
+- `guide.btc` returns premium content after successful settlement
+
+Scaffolded or still not yet verified beyond local development:
+- hosted official facilitator path
+- polished payment receipt / tx hash UX
 - future Clarity proof contract
 - future AIBTC account execution
 
@@ -210,10 +217,34 @@ services/
 ```
 
 Current truth:
-- the service scaffold exists in the repo
+- the service exists in the repo and runs locally
 - the world-side offer metadata exists in Convex
 - the in-world premium UI is real
-- actual x402 payment execution is not verified until the service is installed, configured, and run
+- the first local `guide.btc` x402 payment path is verified end-to-end on Stacks testnet
+- hosted/public facilitator behavior is still a separate verification item
+
+## DoraHacks Snapshot
+
+The strongest honest hackathon claim today is:
+
+- playable 2D world shell with multiplayer foundations
+- backend-driven Stacks ecosystem discovery surfaces
+- purposeful named agents (`guide.btc`, `market.btc`, `quests.btc`)
+- one verified local x402 payment proof through `guide.btc`
+- AIBTC-aligned agent registry and account-binding scaffolding in Convex
+- a clear contract roadmap:
+  - `premium-access.clar`
+  - `world-lobby.clar`
+  - `world-objects.clar`
+  - later `sft-items.clar`
+
+Still roadmap, not live:
+
+- broader multi-agent economic execution
+- autonomous trading / basket strategy
+- broad Chainhooks rollout
+- item/SFT economy
+- hosted production payment infrastructure
 
 See also:
 - [docs/Stacks2D-Architecture.md](./docs/Stacks2D-Architecture.md)
