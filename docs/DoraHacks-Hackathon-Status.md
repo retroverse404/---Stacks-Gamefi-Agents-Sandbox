@@ -16,6 +16,9 @@ Updated: 2026-03-15
   - signed retry
   - local facilitator fallback settlement
   - premium payload returned
+- `premium-access-v2` is deployed on Stacks testnet under Clarity 4
+  - contract: `ST2JDN3QED16X524SE8GWQSTP2MW6D2005AEEGJ9S.premium-access-v2`
+  - txid: `96afaf46c0e1ed8f86aceb0b0687fa6bdd284f9ea1366cd5437dc25901e969c3`
 
 ## What This Proves
 
@@ -25,6 +28,8 @@ The project now has a real technical Stacks proof, not only architecture:
 - real x402 payment challenge
 - real settlement path in local development
 - real premium content unlock
+- real Clarity 4 deployment path from this repo
+- real onchain premium proof contract deployed on testnet
 
 ## JSON Scaling Logic
 
@@ -66,14 +71,14 @@ This is honest AIBTC alignment, not a claim that live AIBTC agents are already o
 
 The strongest contract sequence is:
 
-1. `premium-access.clar`
+1. `premium-access-v2`
 2. `world-lobby.clar`
 3. `world-objects.clar`
 4. later `sft-items.clar`
 
 Why this order:
 
-- `premium-access.clar` matches the verified x402 proof path
+- `premium-access-v2` matches the verified x402 proof path and is already deployed
 - `world-lobby.clar` makes rooms and gated spaces legible onchain
 - `world-objects.clar` maps directly to semantic objects like boards, desks, and terminals
 - `sft-items.clar` is the future item/pass/resource layer, not the first proof
@@ -86,7 +91,7 @@ Ship:
 - three named agents
 - one verified x402 premium flow
 - one visible AIBTC-aligned account-binding story
-- one first contract, `premium-access.clar`
+- one first deployed contract, `premium-access-v2`
 - one JSON-first premium payload contract that can scale to agents and apps
 
 Show as roadmap:
@@ -101,7 +106,7 @@ Show as roadmap:
 
 Safe claim:
 
-- `Stackshub is a playable agentic sandbox for simulated worlds, wallets and transactions, with a verified local x402 premium flow on Stacks testnet and an AIBTC-aligned backend architecture.`
+- `Stackshub is a playable agentic sandbox for simulated worlds, wallets and transactions, with a verified local x402 premium flow, a deployed Clarity 4 premium proof contract on Stacks testnet, and an AIBTC-aligned backend architecture.`
 
 Unsafe claim:
 

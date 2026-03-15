@@ -21,6 +21,7 @@ The future direction adds:
 - external ecosystem ingestion
 - x402 on Stacks transaction flows
 - AIBTC-aligned agent tooling
+- Clarity 4 proof and world-state contracts
 
 ## Core Boundary
 
@@ -60,10 +61,15 @@ Scaffolded now:
 - agent-state storage
 - AIBTC-compatible agent registry and planned account binding
 
+Verified now:
+- local x402 payment path for `guide.btc`
+- deployed `premium-access-v2` contract on Stacks testnet
+- working Clarity 4 deploy path from this repo
+
 Planned next:
 - ranked and fresher ecosystem snapshots
 - purposeful agent behaviors tied to roles and zones
-- real x402 payment execution
+- x402-to-contract grant integration
 - real AIBTC-compatible agent runtime and account flows
 
 ## Folder Mapping
@@ -96,10 +102,12 @@ flowchart LR
   G --> Z[Zero Authority Adapter]
   G --> T[Tenero Adapter]
   G --> P[x402 Service Boundary]
+  G --> C[Clarity Proof Layer]
   X --> AX[AIBTC services]
   Z --> ZX[Zero Authority API]
   T --> TX[Tenero API]
   P --> PX[services/x402-api]
+  C --> CX[premium-access-v2]
 ```
 
 ## Verified Connector Execution
@@ -135,14 +143,16 @@ flowchart TD
   B --> C[Phase 3<br/>Ecosystem data adapters]
   C --> D[Phase 4<br/>Purposeful agents]
   D --> E[Phase 5<br/>Premium content and x402]
-  E --> F[Phase 6<br/>Trading agents and onchain execution]
+  E --> F[Phase 6<br/>Contract proof layer]
+  F --> G[Phase 7<br/>Trading agents and onchain execution]
 
   A["Playable world baseline<br/>maps, movement, scenes, UI, save states"]
   B["World semantics<br/>zones, semantic objects, roles, values, events"]
   C["Ecosystem data adapters<br/>Zero Authority live, Tenero live"]
   D["Purposeful agents<br/>guide, market, quests, posts, constraints"]
   E["Premium content and x402<br/>offers, paywalls, service endpoints"]
-  F["Trading agents and onchain execution<br/>AIBTC accounts, STX, sBTC, USDCx"]
+  F["Contract proof layer<br/>premium-access-v2, world-lobby, world-objects"]
+  G["Trading agents and onchain execution<br/>AIBTC accounts, STX, sBTC, USDCx"]
 ```
 
 Why this order matters:
@@ -227,6 +237,23 @@ Practical interpretation:
 - affordances answer what can be done
 - cognition answers what should happen next
 - execution carries out the chosen action
+
+## Current Clarity Proof Layer
+
+The first onchain proof layer is now live on testnet:
+
+```mermaid
+flowchart LR
+  X[guide.btc x402 payment] --> U[premium unlock event]
+  U --> C[premium-access-v2]
+  C --> R[read-only proof state]
+  R --> W[future world facts, rooms, objects]
+```
+
+Current truth:
+- `premium-access-v2` is deployed on Stacks testnet
+- it is a post-payment proof/state contract
+- the app does not yet call `grant-access` automatically after successful x402 settlement
 
 ## Why This Is Needed
 

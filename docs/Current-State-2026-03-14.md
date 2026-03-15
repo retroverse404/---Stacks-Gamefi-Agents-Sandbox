@@ -63,6 +63,7 @@ Now verified:
 - `GET /api/premium/guide-btc` returns a real HTTP `402 Payment Required` when configured with a testnet receiver address
 - the browser can read the x402 challenge and retry after wallet signing
 - the local `guide.btc` path now settles and returns premium content through the service-local facilitator fallback
+- `premium-access-v2` is deployed on Stacks testnet under Clarity 4
 
 The verified `402` response now includes:
 - x402 v2 response shape
@@ -81,7 +82,7 @@ Also implemented:
 Still not verified:
 - hosted official facilitator path
 - polished payment receipt / tx hash UX
-- any Clarity proof contract
+- x402-to-contract grant integration
 - hosted end-to-end payment proof outside local development
 
 ## Important Truth
@@ -92,17 +93,18 @@ It now **does** have:
 - verified local x402 settlement end-to-end for `guide.btc`
 - explicit backend persistence for player wallets, service wallets, agent wallets, and signed intents
 - a machine-readable premium payload contract suitable for future agent/app consumption
+- one deployed Clarity 4 proof contract on Stacks testnet
 
 It does **not** yet have:
 - verified hosted/public-facilitator settlement
-- verified onchain proof contract
+- verified x402-to-contract write path
 - verified AIBTC execution against agent accounts
 - a fully enriched classified premium briefing sourced from live backend context
 
 ## Immediate Next Steps
 
-1. Persist successful premium unlocks into world state and visible world events
-2. Add receipt / transaction UX to the `guide.btc` premium flow
-3. Draft and integrate `premium-access.clar`
+1. Wire successful `guide.btc` x402 settlement to `premium-access-v2`
+2. Persist successful premium unlocks into world state and visible world events
+3. Add receipt / transaction UX to the `guide.btc` premium flow
 4. Keep `world-lobby.clar` and `world-objects.clar` as the next contract milestones
 5. Continue replacing static NPC behavior with semantic action loops

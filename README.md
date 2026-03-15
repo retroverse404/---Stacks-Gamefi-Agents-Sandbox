@@ -59,9 +59,11 @@ flowchart LR
   G[stacks2d / TinyRealms] --> X[AIBTC Adapter]
   G --> Z[Zero Authority Adapter]
   G --> P[x402 Adapter]
+  G --> C[Clarity Proof Layer]
   X --> AX[AIBTC services]
   Z --> ZX[Zero Authority API]
   P --> PX[x402 API / sponsor relay]
+  C --> CX[premium-access-v2<br/>testnet]
 ```
 
 ## Sequential Build Path
@@ -130,10 +132,17 @@ Verified locally:
 - `guide.btc` returns premium content after successful settlement
 - the premium response is returned as structured JSON that can scale to both human UI rendering and agent consumption
 
+Verified on Stacks testnet:
+- `premium-access-v2` is deployed under Clarity 4
+- deployed contract:
+  - `ST2JDN3QED16X524SE8GWQSTP2MW6D2005AEEGJ9S.premium-access-v2`
+- deployment tx:
+  - `96afaf46c0e1ed8f86aceb0b0687fa6bdd284f9ea1366cd5437dc25901e969c3`
+
 Scaffolded or still not yet verified beyond local development:
 - hosted official facilitator path
 - polished payment receipt / tx hash UX
-- future Clarity proof contract
+- x402-to-contract grant flow
 - future AIBTC account execution
 
 ## Verified Backend Connector Execution
@@ -200,6 +209,23 @@ Important truth:
 - this SFT layer is a planned roadmap item
 - it is not implemented in the current build
 
+## Contract Proof Layer
+
+The first contract proof layer is no longer theoretical.
+
+```mermaid
+flowchart LR
+  P[guide.btc x402 payment] --> U[premium unlock]
+  U --> C[premium-access-v2]
+  C --> R[readable proof state]
+  R --> W[future world facts and gated surfaces]
+```
+
+Current truth:
+- `premium-access-v2` is deployed on Stacks testnet
+- it is a post-payment proof/state contract, not the x402 settlement mechanism
+- the backend is not yet calling `grant-access` after successful payment
+
 ## Tech Stack
 
 - **Frontend**: Vite + TypeScript
@@ -261,9 +287,11 @@ The strongest honest hackathon claim today is:
 - backend-driven Stacks ecosystem discovery surfaces
 - purposeful named agents (`guide.btc`, `market.btc`, `quests.btc`)
 - one verified local x402 payment proof through `guide.btc`
+- one deployed Clarity 4 contract proof layer:
+  - `premium-access-v2`
 - AIBTC-aligned agent registry and account-binding scaffolding in Convex
 - a clear contract roadmap:
-  - `premium-access.clar`
+  - `premium-access-v2`
   - `world-lobby.clar`
   - `world-objects.clar`
   - later `sft-items.clar`

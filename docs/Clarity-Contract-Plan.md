@@ -8,10 +8,10 @@ The project should not lead with a world/lobby contract as the first and only ha
 
 The recommended order is:
 
-1. `premium-access.clar`
+1. `premium-access-v2`
 2. `world-lobby.clar`
 
-## Why `premium-access.clar` Comes First
+## Why `premium-access-v2` Comes First
 
 This contract maps directly to the current product slice:
 - `guide.btc` premium content
@@ -23,6 +23,10 @@ It is the strongest first onchain proof because it ties to:
 - premium content
 - transactions
 - receipts or unlock state
+
+Current truth:
+- this first contract is now deployed on Stacks testnet
+- it was deployed from this repo using Clarity 4
 
 ## Why a World/Lobby Contract Still Fits
 
@@ -52,7 +56,7 @@ What it models well:
     - `station`
     - later premium or sponsored worlds
 
-- `premium-access.clar`
+- `premium-access-v2`
   - one narrow contract for premium unlock proof
   - tied to:
     - `guide.btc`
@@ -74,8 +78,8 @@ It is **not** a substitute for:
 
 ## Next Contract Work
 
-1. Keep `premium-access.clar` minimal and hackathon-safe
-2. Scope it as post-payment proof/state, not x402 settlement itself
+1. Wire x402 success to `premium-access-v2`
+2. Keep it scoped as post-payment proof/state, not x402 settlement itself
 3. Use resource-specific access keys such as `guide-btc-premium-brief`
 4. After that, adapt the `btchub-lobby.clar` state-machine style into `world-lobby.clar`
 5. Later, add an SFT item/resource layer for GameFi progression and passes
