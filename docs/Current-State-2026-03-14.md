@@ -64,6 +64,8 @@ Now verified:
 - the browser can read the x402 challenge and retry after wallet signing
 - the local `guide.btc` path now settles and returns premium content through the service-local facilitator fallback
 - `premium-access-v2` is deployed on Stacks testnet under Clarity 4
+- contract explorer: `https://explorer.hiro.so/address/ST2JDN3QED16X524SE8GWQSTP2MW6D2005AEEGJ9S?chain=testnet`
+- tx explorer: `https://explorer.hiro.so/txid/0x96afaf46c0e1ed8f86aceb0b0687fa6bdd284f9ea1366cd5437dc25901e969c3?chain=testnet`
 
 The verified `402` response now includes:
 - x402 v2 response shape

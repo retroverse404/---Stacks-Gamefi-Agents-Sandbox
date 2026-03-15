@@ -18,8 +18,12 @@ This project builds from the original [61cygni/tinyrealms](https://github.com/61
 - local x402 premium payment proof for `guide.btc`
 - deployed Clarity 4 contract proof layer:
   - `ST2JDN3QED16X524SE8GWQSTP2MW6D2005AEEGJ9S.premium-access-v2`
+- contract explorer:
+  - `https://explorer.hiro.so/address/ST2JDN3QED16X524SE8GWQSTP2MW6D2005AEEGJ9S?chain=testnet`
 - deployment tx:
   - `96afaf46c0e1ed8f86aceb0b0687fa6bdd284f9ea1366cd5437dc25901e969c3`
+- tx explorer:
+  - `https://explorer.hiro.so/txid/0x96afaf46c0e1ed8f86aceb0b0687fa6bdd284f9ea1366cd5437dc25901e969c3?chain=testnet`
 
 ## Why This Matters
 

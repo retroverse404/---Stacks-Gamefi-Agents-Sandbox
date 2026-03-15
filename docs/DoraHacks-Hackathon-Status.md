@@ -18,7 +18,9 @@ Updated: 2026-03-15
   - premium payload returned
 - `premium-access-v2` is deployed on Stacks testnet under Clarity 4
   - contract: `ST2JDN3QED16X524SE8GWQSTP2MW6D2005AEEGJ9S.premium-access-v2`
+  - contract explorer: `https://explorer.hiro.so/address/ST2JDN3QED16X524SE8GWQSTP2MW6D2005AEEGJ9S?chain=testnet`
   - txid: `96afaf46c0e1ed8f86aceb0b0687fa6bdd284f9ea1366cd5437dc25901e969c3`
+  - tx explorer: `https://explorer.hiro.so/txid/0x96afaf46c0e1ed8f86aceb0b0687fa6bdd284f9ea1366cd5437dc25901e969c3?chain=testnet`
 
 ## What This Proves
 
