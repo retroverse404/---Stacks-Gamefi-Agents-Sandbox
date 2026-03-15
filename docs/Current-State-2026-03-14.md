@@ -80,9 +80,9 @@ Also implemented:
 - a JSON-first premium response shape that can act as a receipt/proof envelope for future richer premium payloads
 
 Still not verified:
-- hosted official facilitator path
-- polished payment receipt / tx hash UX
-- x402-to-contract grant integration
+- public hosted facilitator infrastructure
+- clean receipt / transaction-proof UX in the app
+- automatic contract grant after successful x402 payment
 - hosted end-to-end payment proof outside local development
 
 ## Important Truth

@@ -139,11 +139,11 @@ Verified on Stacks testnet:
 - deployment tx:
   - `96afaf46c0e1ed8f86aceb0b0687fa6bdd284f9ea1366cd5437dc25901e969c3`
 
-Scaffolded or still not yet verified beyond local development:
-- hosted official facilitator path
-- polished payment receipt / tx hash UX
-- x402-to-contract grant flow
-- future AIBTC account execution
+Not yet fully integrated:
+- public hosted payment infrastructure outside the local fallback path
+- a clean receipt and transaction-proof user experience
+- automatic contract access grants after successful x402 payment
+- live AIBTC-style agent account execution
 
 ## Verified Backend Connector Execution
 
