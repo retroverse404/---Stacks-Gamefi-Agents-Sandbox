@@ -1,6 +1,6 @@
 # stacks2d (tinyrealms)
 
-A place to go.
+The Stacks ecosystem, made playable.
 
 Work in progress: a 2D social world and agent sandbox for creator economy and Stacks/Bitcoin-native interactions.
 
@@ -12,6 +12,14 @@ This project builds from the original [61cygni/tinyrealms](https://github.com/61
 - **What works now**: world rendering, map editing, multiplayer foundations, NPC runtime, Braintrust-backed AI actions
 - **What it is becoming**: a sandbox for AI agents, creator economy, and Stacks/Bitcoin-native interactions
 - **Why Stacks**: the architecture is being shaped for future AIBTC patterns, x402 on Stacks transaction flows, and external ecosystem adapters without coupling those concerns into the core game runtime
+
+## Current Deployed Artifacts
+
+- local x402 premium payment proof for `guide.btc`
+- deployed Clarity 4 contract proof layer:
+  - `ST2JDN3QED16X524SE8GWQSTP2MW6D2005AEEGJ9S.premium-access-v2`
+- deployment tx:
+  - `96afaf46c0e1ed8f86aceb0b0687fa6bdd284f9ea1366cd5437dc25901e969c3`
 
 ## Why This Matters
 

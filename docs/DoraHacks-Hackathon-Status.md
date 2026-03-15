@@ -51,7 +51,7 @@ Why this still matters for the hackathon:
 - it proves the payment rail is real
 - it gives a scalable contract for richer premium payloads later
 - it naturally extends into:
-  - `premium-access.clar`
+  - `premium-access-v2`
   - `world-lobby.clar`
   - `world-objects.clar`
   - later `sft-items.clar`
