@@ -226,6 +226,25 @@ Current truth:
 - it is a post-payment proof/state contract, not the x402 settlement mechanism
 - the backend is not yet calling `grant-access` after successful payment
 
+## Why x402 and the Contract Both Exist
+
+Judges should read the two layers like this:
+
+- x402 answers: `can this premium action be paid for and unlocked right now?`
+- `premium-access-v2` answers: `can this premium unlock be proven or recorded onchain after payment?`
+
+In other words:
+
+- x402 = payment and delivery
+- Clarity = proof and durable world state
+
+That separation is deliberate.
+It keeps the payment rail narrow while giving the world a path to:
+- gated rooms
+- gated objects
+- pass-based access
+- future item and world logic
+
 ## Tech Stack
 
 - **Frontend**: Vite + TypeScript

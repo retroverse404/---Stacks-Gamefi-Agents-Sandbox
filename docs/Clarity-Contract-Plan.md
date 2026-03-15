@@ -2,6 +2,26 @@
 
 This note records the current contract sequencing decision for `stacks2d`.
 
+## Plain-English Logic
+
+The contract layer exists because x402 alone is not enough.
+
+- x402 proves that a payment happened and delivers premium content
+- the contract layer proves or records premium unlock state onchain
+
+So the logic is:
+
+```mermaid
+flowchart LR
+  X[x402 payment succeeds] --> U[premium unlock]
+  U --> C[premium-access-v2]
+  C --> P[proof state onchain]
+  P --> W[future rooms, objects, items]
+```
+
+This means the contract is not replacing x402.
+It is extending it with durable world-readable proof.
+
 ## Current Decision
 
 The project should not lead with a world/lobby contract as the first and only hackathon contract.

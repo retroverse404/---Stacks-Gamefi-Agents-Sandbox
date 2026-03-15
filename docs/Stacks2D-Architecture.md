@@ -244,16 +244,21 @@ The first onchain proof layer is now live on testnet:
 
 ```mermaid
 flowchart LR
-  X[guide.btc x402 payment] --> U[premium unlock event]
+  O[in-world premium offer] --> X[x402 payment rail]
+  X --> U[premium unlock payload]
   U --> C[premium-access-v2]
   C --> R[read-only proof state]
-  R --> W[future world facts, rooms, objects]
+  R --> W[future rooms, objects, and passes]
 ```
 
 Current truth:
 - `premium-access-v2` is deployed on Stacks testnet
 - it is a post-payment proof/state contract
 - the app does not yet call `grant-access` automatically after successful x402 settlement
+
+Plain-English interpretation:
+- x402 answers: "was this premium action paid for?"
+- `premium-access-v2` answers: "does this principal now have onchain premium access proof?"
 
 ## Why This Is Needed
 
