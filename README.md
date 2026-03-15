@@ -253,6 +253,58 @@ It keeps the payment rail narrow while giving the world a path to:
 - pass-based access
 - future item and world logic
 
+## What The Contract Actually Does
+
+`premium-access-v2` is a narrow onchain access-proof contract.
+
+It lets the contract owner:
+
+- grant access to a specific resource for a specific principal
+- revoke that access
+- check whether a principal has access
+- read the stored grant record
+
+The contract stores:
+
+- `resource-id`
+- `who`
+- `granted-at`
+- `granted-by`
+
+In plain English, it answers:
+
+- `did this wallet get access to this premium thing?`
+- `when was that access granted?`
+- `who granted it?`
+
+It does **not**:
+
+- process payment itself
+- replace x402
+- mint items or tokens
+- handle world/lobby/object logic yet
+
+Its job is simple:
+
+- durable onchain proof of premium unlock state after payment
+
+## Current and Future Use Cases
+
+Current MVP use case:
+
+- `guide.btc` premium briefing
+  - resource key: `guide-btc-premium-brief`
+  - after successful x402 payment, the backend can record that unlock onchain
+
+Near-future use cases:
+
+- premium reports and classified ecosystem briefings
+- premium rooms and gated spaces through `world-lobby.clar`
+- premium terminals, boards, desks, and world objects through `world-objects.clar`
+- passes, keys, badges, and itemized access through `sft-items.clar`
+- agent-readable access checks for future wallet-bearing agents
+- durable proof beyond session-only frontend or Convex state
+
 ## Tech Stack
 
 - **Frontend**: Vite + TypeScript

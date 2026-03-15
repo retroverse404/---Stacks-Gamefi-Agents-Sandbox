@@ -47,6 +47,22 @@ That means:
 - x402 = payment and premium delivery
 - Clarity = durable proof / unlock state
 
+`premium-access-v2` is not a payment contract.
+
+It exists to answer:
+
+- did this wallet unlock this premium resource?
+- when was that access granted?
+- who granted it?
+
+Current intended use cases:
+
+- `guide-btc-premium-brief`
+- future premium reports
+- future premium rooms via `world-lobby.clar`
+- future premium objects and terminals via `world-objects.clar`
+- later passes, keys, and itemized access via `sft-items.clar`
+
 This is the intended relationship:
 
 ```mermaid

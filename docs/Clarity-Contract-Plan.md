@@ -48,6 +48,48 @@ Current truth:
 - this first contract is now deployed on Stacks testnet
 - it was deployed from this repo using Clarity 4
 
+## What `premium-access-v2` Actually Does
+
+`premium-access-v2` is a narrow access-proof contract.
+
+It lets the contract owner:
+
+- grant access to a specific resource for a specific principal
+- revoke that access
+- check whether that principal currently has access
+- read the stored grant record
+
+Its storage model is:
+
+- key:
+  - `resource-id`
+  - `who`
+- value:
+  - `granted-at`
+  - `granted-by`
+
+For the MVP, the intended first resource is:
+
+- `guide-btc-premium-brief`
+
+So the practical product logic is:
+
+- x402 handles payment and delivery
+- `premium-access-v2` records the durable onchain proof that the unlock happened
+
+This contract does **not**:
+
+- enforce payment itself
+- replace x402 settlement
+- mint SFT items
+- manage room membership or world objects
+
+That is why it comes before:
+
+- `world-lobby.clar`
+- `world-objects.clar`
+- `sft-items.clar`
+
 ## Why a World/Lobby Contract Still Fits
 
 The reviewed `btchub-lobby.clar` pattern is useful, but it fits better as a world/session contract than as the first payment-proof contract.
