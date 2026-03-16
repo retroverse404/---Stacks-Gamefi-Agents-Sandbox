@@ -8,7 +8,7 @@ Meaning:
 - a simulation surface that can later settle value through Stacks rails
 
 
-This is a playable Stacks-native agent sandbox built,where wallet-backed actors, paid actions(x402),and world state can be explored inside a multi polar social simulation.
+This is a playable Stacks-native agent sandbox built,where wallet-backed actors, paid actions(x402),and world state can be explored inside a multi-agent social simulation.
 
 This project builds from 2d game engine [61cygni/tinyrealms](https://github.com/61cygni/tinyrealms) foundation, which provided a strong starting point for persistent 2D world simulation.
 
