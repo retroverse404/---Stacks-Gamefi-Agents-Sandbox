@@ -189,6 +189,6 @@ It is **not** a substitute for:
 1. Wire x402 success to `premium-access-v2`
 2. Keep it scoped as post-payment proof/state, not x402 settlement itself
 3. Use resource-specific access keys such as `guide-btc-premium-brief`
-4. After that, adapt the `btchub-lobby.clar` state-machine style into `world-lobby.clar`
-5. Then add `world-objects.clar` as the object access and activation layer
+4. Add app-level reads and writes for `world-lobby.clar` room access
+5. Add app-level reads and writes for `world-objects.clar` object registration and access
 6. Later, add an SFT item/resource layer for GameFi progression and passes

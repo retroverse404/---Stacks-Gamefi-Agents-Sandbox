@@ -70,13 +70,16 @@ What that means for this submission:
   - quote payload returned
 - `premium-access-v2` is deployed on Stacks testnet under Clarity 4
   - contract: `ST2JDN3QED16X524SE8GWQSTP2MW6D2005AEEGJ9S.premium-access-v2`
+  - records paid premium-access proof on testnet
   - contract explorer: `https://explorer.hiro.so/address/ST2JDN3QED16X524SE8GWQSTP2MW6D2005AEEGJ9S?chain=testnet`
   - txid: `96afaf46c0e1ed8f86aceb0b0687fa6bdd284f9ea1366cd5437dc25901e969c3`
   - tx explorer: `https://explorer.hiro.so/txid/0x96afaf46c0e1ed8f86aceb0b0687fa6bdd284f9ea1366cd5437dc25901e969c3?chain=testnet`
 - `world-lobby` is deployed on Stacks testnet
+  - records room creation, open or closed state, and room access on testnet
   - contract: `ST2JDN3QED16X524SE8GWQSTP2MW6D2005AEEGJ9S.world-lobby`
   - tx explorer: `https://explorer.hiro.so/txid/e411bff9d554b55f12a19c30fa4d278525f8c197f4deac3391cb4362b0e6d84f?chain=testnet`
 - `world-objects` is deployed on Stacks testnet
+  - records object registration, active state, and object access on testnet
   - contract: `ST2JDN3QED16X524SE8GWQSTP2MW6D2005AEEGJ9S.world-objects`
   - tx explorer: `https://explorer.hiro.so/txid/37518e87cdb28578cdc9c8afcd5ba42245fca3c45d2adda4b4dfbd0bea5d385f?chain=testnet`
 
@@ -200,7 +203,6 @@ Until submission, prefer work that directly improves judging performance:
 
 Safe claim:
 
-- `Stackshub is a playable agentic sandbox for simulated worlds, wallets and transactions, with a verified local x402 premium flow, a deployed Clarity 4 premium proof contract on Stacks testnet, and an AIBTC-aligned backend architecture.`
 - `Stackshub is a playable agentic sandbox for simulated worlds, wallets and transactions, with verified local x402 paid flows, deployed Clarity 4 premium/room/object contracts on Stacks testnet, and an AIBTC-aligned backend architecture.`
 
 Unsafe claim:

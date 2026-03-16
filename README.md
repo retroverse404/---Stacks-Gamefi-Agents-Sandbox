@@ -243,8 +243,8 @@ What is working now:
 What is planned next:
 - deeper AI agent sandbox logic
 - external ecosystem ingestion
-- AIBTC-aligned agent tooling
-- x402 on Stacks transaction flows
+- x402-to-contract writes
+- stronger in-world agent dialogue and worldFacts coordination
 - future wallet integrations
 
 ## Future GameFi Layer
@@ -637,8 +637,8 @@ flowchart TD
   U["src/ui<br/>screens and presentation"]
   L["src/lib<br/>shared client helpers"]
   C["convex/story<br/>AI dialogue and narrative"]
-  A["convex/agents<br/>planned agent sandbox"]
-  I["convex/integrations<br/>planned external adapters"]
+  A["convex/agents<br/>agent registry, bindings, offers"]
+  I["convex/integrations<br/>Zero Authority and Tenero caches"]
   M["convex/mechanics<br/>items, economy, combat"]
 ```
 

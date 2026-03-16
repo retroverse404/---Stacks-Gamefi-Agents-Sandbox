@@ -19,8 +19,9 @@ The current codebase already supports:
 The future direction adds:
 - richer agent logic
 - external ecosystem ingestion
-- x402 on Stacks transaction flows
-- AIBTC-aligned agent tooling
+- stronger in-world agent dialogue and worldFacts coordination
+- x402-to-contract writes
+- fuller AIBTC-aligned agent runtime
 - Clarity 4 proof and world-state contracts
 
 ## Core Boundary
@@ -55,15 +56,15 @@ Live now:
 - World Feed driven by typed `worldEvents`
 
 Scaffolded now:
-- `guide.btc` premium content path
-- x402 offer metadata
 - separate `services/x402-api` boundary for premium endpoints
-- agent-state storage
-- AIBTC-compatible agent registry and planned account binding
+- agent-state storage and account-binding tables
+- worldFacts blackboard pattern for lightweight coordination
+- external AIBTC module boundary, not yet full in-world runtime
 
 Verified now:
 - local x402 payment path for `guide.btc`
 - local x402 paid quote path for `market.btc`
+- saved `npcProfiles`-backed in-world dialogue for `market.btc`
 - deployed `premium-access-v2`, `world-lobby`, and `world-objects` contracts on Stacks testnet
 - working Clarity 4 deploy path from this repo
 
@@ -91,8 +92,8 @@ flowchart TD
   U["src/ui<br/>screens and presentation"]
   L["src/lib<br/>shared client helpers"]
   C["convex/story<br/>AI dialogue and narrative"]
-  A["convex/agents<br/>planned agent sandbox"]
-  I["convex/integrations<br/>planned external adapters"]
+  A["convex/agents<br/>agent registry, bindings, offers"]
+  I["convex/integrations<br/>Zero Authority and Tenero caches"]
   M["convex/mechanics<br/>items, economy, combat"]
 ```
 
