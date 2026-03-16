@@ -12,7 +12,7 @@ This project builds from the original [61cygni/tinyrealms](https://github.com/61
 - **AI layer**: Braintrust-backed prompts drive in-world dialogue and agent-facing responses.
 - **Payment rail**: x402 gates paid actions like premium briefings and live market quotes.
 - **Contract layer**: Clarity contracts record premium access, room access, and object access on Stacks testnet.
-- **Agent direction**: AIBTC is used as the external agent-wallet pattern, not yet as full in-world autonomous runtime.
+- **AIBTC module**: AIBTC provides the external agent-wallet and trading pattern behind the current `market.btc` direction.
 
 ## Current Sprint
 
@@ -45,6 +45,7 @@ The priority is:
 
 - `guide.btc`: a testnet x402 premium payment loop returns paid content after wallet-signed settlement.
 - `market.btc`: a testnet x402 paid quote loop returns a live quote payload after wallet-signed settlement.
+- `AIBTC`: an external agent-wallet module has already produced a real wallet-backed market actor and informs the `market.btc` integration path.
 - `premium-access-v2`: a deployed Clarity 4 contract records paid premium-access proof on testnet.
 - `world-lobby`: a deployed Clarity contract records room creation, room access, and room entry state on testnet.
 - `world-objects`: a deployed Clarity contract records object registration, object access, and object activity state on testnet.

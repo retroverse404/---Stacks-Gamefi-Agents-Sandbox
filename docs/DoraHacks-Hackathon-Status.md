@@ -130,6 +130,7 @@ The repo is aligned to an AIBTC-style execution model at the schema and boundary
 - `agentAccountBindings`
 - typed world actions for service/execution boundaries
 - modular external-adapter framing
+- an external AIBTC module has already produced a real wallet-backed market actor that now informs `market.btc`
 
 This is honest AIBTC alignment, not a claim that live AIBTC agents are already operating in-world.
 
