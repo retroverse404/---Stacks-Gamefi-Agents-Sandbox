@@ -2,15 +2,14 @@
 
 > Dungeons and Agents
 
-Meaning:
-- a sandbox for agents
-- a world of roles, objects, value, and events
-- a simulation surface that can later settle value through Bitcoin/Stacks rails
+Meaning
+• sandbox for agents
+• world of roles, objects, value, and events
+• simulation surface that can settle value through Bitcoin / Stacks rails
 
+This is a playable Stacks-native GameFi sandbox where wallet-backed actors, paid actions (x402), and world state interact inside a multi-agent social simulation.
 
-This is a playable Stacks-native Gamefi sandbox built,where wallet-backed actors, paid actions(x402),and world state can be explored inside a multi-agent social simulation.
-
-This project builds from 2d game engine [61cygni/tinyrealms](https://github.com/61cygni/tinyrealms) foundation, which provided a strong starting point for persistent 2D world simulation.
+The project builds on the 61cygni/tinyrealms 2D engine, providing a strong foundation for persistent world simulation.
 
 ## At A Glance
 
