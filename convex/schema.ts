@@ -247,6 +247,17 @@ export default defineSchema({
     affordances: v.array(v.string()),  // "inspect" | "buy" | "listen" | "query" | etc.
     valueClass: v.optional(v.string()), // "utility" | "premium" | "decor" | "trade"
     linkedAgentId: v.optional(v.string()),
+    triggerType: v.optional(v.string()),   // "interact" | "proximity" | "timed" | "payment-complete"
+    freeActions: v.optional(v.array(v.string())),
+    paidActions: v.optional(v.array(v.string())),
+    premiumOfferKey: v.optional(v.string()),
+    interactionPrompt: v.optional(v.string()),
+    interactionSummary: v.optional(v.string()),
+    inspectEventType: v.optional(v.string()),
+    interactEventType: v.optional(v.string()),
+    paidEventType: v.optional(v.string()),
+    roomLabel: v.optional(v.string()),
+    itemDefName: v.optional(v.string()),
     stateJson: v.optional(v.string()),
     metadataJson: v.optional(v.string()),
     updatedAt: v.number(),
@@ -285,17 +296,40 @@ export default defineSchema({
 
   worldEvents: defineTable({
     mapName: v.optional(v.string()),
+    worldId: v.optional(v.string()),
     eventType: v.string(),            // "spawned" | "inspected" | "offered" | "paid" | etc.
+    sourceType: v.optional(v.string()),
+    sourceId: v.optional(v.string()),
     actorId: v.optional(v.string()),
     targetId: v.optional(v.string()),
     objectKey: v.optional(v.string()),
     zoneKey: v.optional(v.string()),
+    tileX: v.optional(v.number()),
+    tileY: v.optional(v.number()),
     summary: v.string(),
+    payloadJson: v.optional(v.string()),
     detailsJson: v.optional(v.string()),
     timestamp: v.number(),
   })
     .index("by_map_time", ["mapName", "timestamp"])
     .index("by_actor_time", ["actorId", "timestamp"]),
+
+  chainhookReceipts: defineTable({
+    dedupeKey: v.string(),
+    txHash: v.optional(v.string()),
+    blockHash: v.optional(v.string()),
+    chain: v.string(),
+    network: v.string(),
+    eventType: v.string(),
+    status: v.string(),               // "applied" | "rolled-back"
+    source: v.optional(v.string()),
+    payloadJson: v.string(),
+    relatedFactKey: v.optional(v.string()),
+    relatedEventId: v.optional(v.id("worldEvents")),
+    updatedAt: v.number(),
+  })
+    .index("by_dedupeKey", ["dedupeKey"])
+    .index("by_txHash", ["txHash"]),
 
   // ---------------------------------------------------------------------------
   // Profiles (auth-linked player characters)
@@ -788,6 +822,12 @@ export default defineSchema({
     memorySummary: v.optional(v.string()),
     contextJson: v.optional(v.string()),
     transitionsJson: v.optional(v.string()),
+    budgetPolicyJson: v.optional(v.string()),
+    lastAiCallAt: v.optional(v.number()),
+    nextAiAllowedAt: v.optional(v.number()),
+    aiCallsToday: v.optional(v.number()),
+    aiWindowStartedAt: v.optional(v.number()),
+    lastEpochAt: v.optional(v.number()),
     updatedAt: v.number(),
   })
     .index("by_agentId", ["agentId"])
@@ -798,6 +838,8 @@ export default defineSchema({
     displayName: v.string(),
     network: v.string(),               // "testnet" | "mainnet"
     walletAddress: v.optional(v.string()),
+    walletProvider: v.optional(v.string()), // "aibtc" | "xverse" | "turnkey"
+    walletStatus: v.optional(v.string()),   // "planned" | "active-testnet" | "active-mainnet"
     bnsName: v.optional(v.string()),
     agentType: v.string(),             // "npc" | "service" | "external-aibtc"
     roleKey: v.string(),               // "guide" | "market" | "quests" | etc.
@@ -807,6 +849,10 @@ export default defineSchema({
     homeMap: v.optional(v.string()),
     homeZoneKey: v.optional(v.string()),
     supportedAssets: v.array(v.string()), // "STX" | "sBTC" | "USDCx"
+    testnetAddress: v.optional(v.string()),
+    mainnetAddress: v.optional(v.string()),
+    lineageSource: v.optional(v.string()), // "bitflow-tutorial-1" | "aibtc-template"
+    lineageRef: v.optional(v.string()),    // "market-btc-m1" | "guide-btc-t1"
     metadataJson: v.optional(v.string()),
     updatedAt: v.number(),
   })
@@ -819,17 +865,65 @@ export default defineSchema({
     network: v.string(),
     ownerAddress: v.optional(v.string()),
     agentAddress: v.optional(v.string()),
+    walletProvider: v.optional(v.string()),
+    walletStatus: v.optional(v.string()),
     accountContractId: v.optional(v.string()),
     allowlistedContracts: v.array(v.string()),
     canPropose: v.boolean(),
     canApproveContracts: v.boolean(),
     canTradeAssets: v.boolean(),
     status: v.string(),                // "planned" | "bound" | "disabled"
+    testnetAddress: v.optional(v.string()),
+    mainnetAddress: v.optional(v.string()),
+    lineageSource: v.optional(v.string()),
+    lineageRef: v.optional(v.string()),
     metadataJson: v.optional(v.string()),
     updatedAt: v.number(),
   })
     .index("by_agentId", ["agentId"])
     .index("by_network_status", ["network", "status"]),
+
+  walletIdentities: defineTable({
+    walletId: v.string(),             // stable binding key, e.g. "guide-btc:execution:testnet"
+    network: v.string(),              // "testnet" | "mainnet"
+    address: v.string(),              // STX address or future contract/account address
+    linkedTestnetAddress: v.optional(v.string()),
+    linkedMainnetAddress: v.optional(v.string()),
+    bnsName: v.optional(v.string()),
+    ownerType: v.string(),            // "player" | "agent" | "service"
+    ownerId: v.string(),              // profile id, agent id, or service key
+    walletRole: v.string(),           // "payer" | "receiver" | "identity" | "execution"
+    provider: v.optional(v.string()), // "xverse" | "leather" | "hiro" | "aibtc" | "turnkey"
+    custodyType: v.string(),          // "browser" | "server" | "contract" | "external"
+    status: v.string(),               // "planned" | "active" | "disabled"
+    lineageSource: v.optional(v.string()),
+    lineageRef: v.optional(v.string()),
+    metadataJson: v.optional(v.string()),
+    updatedAt: v.number(),
+  })
+    .index("by_walletId", ["walletId"])
+    .index("by_network_address", ["network", "address"])
+    .index("by_owner", ["ownerType", "ownerId"])
+    .index("by_role_status", ["walletRole", "status"]),
+
+  signedIntents: defineTable({
+    intentKey: v.string(),            // stable key from client or backend coordinator
+    network: v.string(),
+    standard: v.string(),             // "sip-018" | future variants
+    signerAddress: v.string(),
+    signerRole: v.string(),           // "player" | "agent" | "service"
+    subjectType: v.string(),          // "agent" | "offer" | "room" | "object"
+    subjectId: v.string(),
+    intentType: v.string(),           // "approve" | "quote" | "enter-room" | "agent-policy"
+    payloadJson: v.string(),
+    signature: v.string(),
+    status: v.string(),               // "active" | "consumed" | "expired" | "revoked"
+    expiresAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_intentKey", ["intentKey"])
+    .index("by_signer_time", ["signerAddress", "updatedAt"])
+    .index("by_subject_status", ["subjectType", "subjectId", "status"]),
 
   premiumContentOffers: defineTable({
     offerKey: v.string(),              // stable identifier, e.g. "guide-btc-premium-brief"
@@ -841,6 +935,16 @@ export default defineSchema({
     priceAmount: v.string(),           // store as string to avoid precision assumptions
     network: v.optional(v.string()),   // "testnet" | "mainnet" | "stacks:1"
     endpointPath: v.optional(v.string()),
+    mapName: v.optional(v.string()),
+    zoneKey: v.optional(v.string()),
+    objectKey: v.optional(v.string()),
+    sourceType: v.optional(v.string()),   // "agent" | "interactable" | "terminal"
+    deliveryType: v.optional(v.string()), // "npc-briefing" | "lore-packet" | "quote-json"
+    unlockEventType: v.optional(v.string()),
+    unlockFactKey: v.optional(v.string()),
+    resourceId: v.optional(v.string()),
+    receiverAddress: v.optional(v.string()),
+    mainnetExecutionAddress: v.optional(v.string()),
     status: v.string(),                // "draft" | "active" | "disabled"
     metadataJson: v.optional(v.string()),
     updatedAt: v.number(),

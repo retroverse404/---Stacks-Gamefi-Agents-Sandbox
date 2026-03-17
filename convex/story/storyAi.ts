@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { action } from "../_generated/server";
+import { api } from "../_generated/api";
 
 // Braintrust AI Proxy for LLM-assisted narrative generation
 // Uses the Braintrust proxy endpoint for chat completions
@@ -7,28 +8,82 @@ import { action } from "../_generated/server";
 function getBraintrustConfig() {
   const env = (globalThis as any)?.process?.env ?? {};
   const apiKey = env.BRAINTRUST_API_KEY as string | undefined;
-  const model = (env.BRAINTRUST_MODEL as string | undefined) || "gemini-2.5-flash";
+  const configuredModel = (env.BRAINTRUST_MODEL as string | undefined) || "gemini-2.5-flash";
+  const allowedModels = String(
+    env.BRAINTRUST_ALLOWED_MODELS ??
+      "gpt-4.1-mini,gpt-4.1,gemini-2.5-flash,gemini-2.5-pro",
+  )
+    .split(",")
+    .map((value: string) => value.trim())
+    .filter(Boolean);
+  const model = allowedModels.includes(configuredModel)
+    ? configuredModel
+    : allowedModels[0] ?? "gemini-2.5-flash";
+  const maxHistoryMessages = Number(env.BRAINTRUST_MAX_HISTORY_MESSAGES ?? 8);
+  const maxInputChars = Number(env.BRAINTRUST_MAX_INPUT_CHARS ?? 1200);
+  const maxOutputTokens = Number(env.BRAINTRUST_MAX_OUTPUT_TOKENS ?? 360);
 
   if (!apiKey) throw new Error("BRAINTRUST_API_KEY not configured");
 
-  return { apiKey, model };
+  return {
+    apiKey,
+    model,
+    maxHistoryMessages: Number.isFinite(maxHistoryMessages) ? maxHistoryMessages : 8,
+    maxInputChars: Number.isFinite(maxInputChars) ? maxInputChars : 1200,
+    maxOutputTokens: Number.isFinite(maxOutputTokens) ? maxOutputTokens : 360,
+  };
+}
+
+function trimText(input: string, maxChars: number) {
+  if (input.length <= maxChars) return input;
+  return `${input.slice(0, Math.max(0, maxChars - 1)).trimEnd()}…`;
+}
+
+function sanitizeConversationHistory(
+  conversationHistory: any[] | undefined,
+  maxHistoryMessages: number,
+  maxInputChars: number,
+) {
+  if (!Array.isArray(conversationHistory) || conversationHistory.length === 0) {
+    return [];
+  }
+
+  return conversationHistory.slice(-maxHistoryMessages).map((message) => ({
+    role: message?.role === "assistant" ? "assistant" : "user",
+    content: trimText(String(message?.content ?? ""), maxInputChars),
+  }));
 }
 
 export const generateDialogue = action({
   args: {
+    agentId: v.optional(v.string()),
     systemPrompt: v.string(),
     userMessage: v.string(),
     conversationHistory: v.optional(v.any()),
   },
-  handler: async (_ctx, { systemPrompt, userMessage, conversationHistory }) => {
-    const { apiKey, model } = getBraintrustConfig();
+  handler: async (ctx, { agentId, systemPrompt, userMessage, conversationHistory }) => {
+    const { apiKey, model, maxHistoryMessages, maxInputChars, maxOutputTokens } =
+      getBraintrustConfig();
 
-    const messages: any[] = [{ role: "system", content: systemPrompt }];
-
-    if (conversationHistory) {
-      messages.push(...(conversationHistory as any[]));
+    if (agentId) {
+      await ctx.runMutation((api as any)["agents/runtime"].registerAiCall, {
+        agentId,
+        reason: "generate-dialogue",
+      });
     }
-    messages.push({ role: "user", content: userMessage });
+
+    const messages: any[] = [
+      { role: "system", content: trimText(systemPrompt, maxInputChars * 2) },
+    ];
+
+    messages.push(
+      ...sanitizeConversationHistory(
+        conversationHistory as any[] | undefined,
+        maxHistoryMessages,
+        maxInputChars,
+      ),
+    );
+    messages.push({ role: "user", content: trimText(userMessage, maxInputChars) });
 
     const response = await fetch(
       "https://api.braintrust.dev/v1/proxy/chat/completions",
@@ -41,7 +96,7 @@ export const generateDialogue = action({
         body: JSON.stringify({
           model,
           messages,
-          max_tokens: 500,
+          max_tokens: Math.max(64, Math.min(maxOutputTokens, 600)),
         }),
       }
     );
@@ -68,7 +123,7 @@ export const expandNarrative = action({
     ),
   },
   handler: async (_ctx, { prompt, context, type }) => {
-    const { apiKey, model } = getBraintrustConfig();
+    const { apiKey, model, maxInputChars, maxOutputTokens } = getBraintrustConfig();
 
     const systemPrompts: Record<string, string> = {
       quest:
@@ -82,8 +137,8 @@ export const expandNarrative = action({
 
     const messages = [
       { role: "system", content: systemPrompts[type] },
-      ...(context ? [{ role: "user", content: `Context: ${context}` }] : []),
-      { role: "user", content: prompt },
+      ...(context ? [{ role: "user", content: `Context: ${trimText(context, maxInputChars)}` }] : []),
+      { role: "user", content: trimText(prompt, maxInputChars) },
     ];
 
     const response = await fetch(
@@ -97,7 +152,7 @@ export const expandNarrative = action({
         body: JSON.stringify({
           model,
           messages,
-          max_tokens: 1000,
+          max_tokens: Math.max(160, Math.min(maxOutputTokens * 2, 900)),
         }),
       }
     );

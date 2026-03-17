@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { buildWorldEventRecord } from "./lib/worldEvents";
 
 export const listFacts = query({
   args: { mapName: v.optional(v.string()) },
@@ -64,18 +65,21 @@ export const upsertFact = mutation({
 export const appendEvent = mutation({
   args: {
     mapName: v.optional(v.string()),
+    worldId: v.optional(v.string()),
     eventType: v.string(),
+    sourceType: v.optional(v.string()),
+    sourceId: v.optional(v.string()),
     actorId: v.optional(v.string()),
     targetId: v.optional(v.string()),
     objectKey: v.optional(v.string()),
     zoneKey: v.optional(v.string()),
+    tileX: v.optional(v.number()),
+    tileY: v.optional(v.number()),
     summary: v.string(),
+    payloadJson: v.optional(v.string()),
     detailsJson: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.insert("worldEvents", {
-      ...args,
-      timestamp: Date.now(),
-    });
+    return await ctx.db.insert("worldEvents", buildWorldEventRecord(args));
   },
 });

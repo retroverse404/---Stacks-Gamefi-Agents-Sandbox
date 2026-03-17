@@ -3,6 +3,7 @@ import { mutation, query, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireSuperuser } from "./lib/requireSuperuser";
 import { getRequestUserId } from "./lib/getRequestUserId";
+import { buildWorldEventRecord } from "./lib/worldEvents";
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -200,6 +201,27 @@ export const pickup = mutation({
     } else {
       await ctx.db.delete(worldItemId);
     }
+
+    const isBroom = worldItem.itemDefName === "witchwood-broom";
+    await ctx.db.insert("worldEvents", buildWorldEventRecord({
+      mapName: worldItem.mapName,
+      sourceType: isBroom ? "interactable" : "item",
+      sourceId: isBroom ? "broom-stand" : worldItem.itemDefName,
+      eventType: isBroom ? "broom-taken" : "item-picked-up",
+      actorId: profile.name,
+      targetId: worldItem.itemDefName,
+      objectKey: isBroom ? "broom-stand" : undefined,
+      zoneKey: isBroom ? "study-wing" : undefined,
+      summary: isBroom
+        ? `${profile.name} recovered the Witchwood Broom from the study wing.`
+        : `${profile.name} picked up ${itemDef?.displayName ?? worldItem.itemDefName}.`,
+      payloadJson: JSON.stringify({
+        itemDefName: worldItem.itemDefName,
+        displayName: itemDef?.displayName ?? worldItem.itemDefName,
+        quantity: worldItem.quantity,
+        profileId,
+      }),
+    }));
 
     return {
       success: true,

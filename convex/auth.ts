@@ -60,11 +60,28 @@ const PasswordWithLocalReset = ConvexCredentials({
     }
 
     if (flow === "signIn") {
-      const retrieved = await retrieveAccount(ctx, {
-        provider: "password",
-        account: { id: email, secret: password },
-      });
-      return { userId: retrieved.user._id };
+      try {
+        const retrieved = await retrieveAccount(ctx, {
+          provider: "password",
+          account: { id: email, secret: password },
+        });
+        return { userId: retrieved.user._id };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (!isLocalDeployment() || !message.includes("InvalidAccountId")) {
+          throw error;
+        }
+
+        // Local deployments are frequently reset during development. If the
+        // account row was wiped with the local DB, recreate it seamlessly so
+        // local sign-in does not fail with a raw server error.
+        const created = await createAccount(ctx, {
+          provider: "password",
+          account: { id: email, secret: password },
+          profile: { email },
+        });
+        return { userId: created.user._id };
+      }
     }
 
     throw new Error(`Unsupported password flow "${flow ?? "unknown"}"`);

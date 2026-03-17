@@ -1,6 +1,16 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
+function parseJsonObject(value: string | undefined): Record<string, unknown> {
+  if (!value) return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
 export const getMapSemantics = query({
   args: { mapName: v.string() },
   handler: async (ctx, { mapName }) => {
@@ -40,6 +50,114 @@ export const listObjects = query({
       .query("semanticObjects")
       .withIndex("by_map", (q) => q.eq("mapName", mapName))
       .collect();
+  },
+});
+
+export const listInteractionSurfaces = query({
+  args: { mapName: v.string() },
+  handler: async (ctx, { mapName }) => {
+    const [objects, offers] = await Promise.all([
+      ctx.db
+        .query("semanticObjects")
+        .withIndex("by_map", (q) => q.eq("mapName", mapName))
+        .collect(),
+      ctx.db.query("premiumContentOffers").collect(),
+    ]);
+
+    const offersByKey = new Map(offers.map((offer) => [offer.offerKey, offer]));
+
+    return objects.map((object) => {
+      const meta = parseJsonObject(object.metadataJson);
+      const offerKey =
+        object.premiumOfferKey ??
+        (typeof meta.premiumOfferKey === "string" ? meta.premiumOfferKey : null) ??
+        null;
+      const offer = offerKey ? offersByKey.get(offerKey) ?? null : null;
+      const offerMeta = parseJsonObject(offer?.metadataJson);
+
+      return {
+        objectKey: object.objectKey,
+        label: object.label,
+        objectType: object.objectType,
+        zoneKey: object.zoneKey ?? null,
+        linkedAgentId: object.linkedAgentId ?? null,
+        triggerType:
+          object.triggerType ??
+          (typeof meta.trigger === "string" ? meta.trigger : null) ??
+          null,
+        freeActions:
+          object.freeActions ??
+          (Array.isArray(meta.freeActions) ? (meta.freeActions as string[]) : []),
+        paidActions:
+          object.paidActions ??
+          (Array.isArray(meta.paidActions) ? (meta.paidActions as string[]) : []),
+        premiumOfferKey: offerKey,
+        interactionPrompt:
+          object.interactionPrompt ??
+          (typeof meta.interactionPrompt === "string" ? meta.interactionPrompt : null) ??
+          null,
+        interactionSummary:
+          object.interactionSummary ??
+          (typeof meta.interactionSummary === "string" ? meta.interactionSummary : null) ??
+          null,
+        inspectEventType:
+          object.inspectEventType ??
+          (meta.eventBindings && typeof meta.eventBindings === "object" && typeof (meta.eventBindings as any).inspect === "string"
+            ? (meta.eventBindings as any).inspect
+            : null) ??
+          null,
+        interactEventType:
+          object.interactEventType ??
+          (meta.eventBindings && typeof meta.eventBindings === "object" && typeof (meta.eventBindings as any).interact === "string"
+            ? (meta.eventBindings as any).interact
+            : null) ??
+          null,
+        paidEventType:
+          object.paidEventType ??
+          (meta.eventBindings && typeof meta.eventBindings === "object" && typeof (meta.eventBindings as any).paid === "string"
+            ? (meta.eventBindings as any).paid
+            : null) ??
+          null,
+        roomLabel:
+          object.roomLabel ??
+          (typeof meta.roomLabel === "string" ? meta.roomLabel : null) ??
+          null,
+        itemDefName:
+          object.itemDefName ??
+          (typeof meta.itemDefName === "string" ? meta.itemDefName : null) ??
+          null,
+        offer: offer
+          ? {
+              offerKey: offer.offerKey,
+              agentId: offer.agentId,
+              provider: offer.provider,
+              priceAsset: offer.priceAsset,
+              priceAmount: offer.priceAmount,
+              endpointPath: offer.endpointPath ?? null,
+              sourceType:
+                offer.sourceType ??
+                (typeof offerMeta.sourceType === "string" ? offerMeta.sourceType : null) ??
+                null,
+              deliveryType:
+                offer.deliveryType ??
+                (typeof offerMeta.delivery === "string" ? offerMeta.delivery : null) ??
+                null,
+              unlockEventType:
+                offer.unlockEventType ??
+                (typeof offerMeta.unlockEventType === "string" ? offerMeta.unlockEventType : null) ??
+                null,
+              unlockFactKey:
+                offer.unlockFactKey ??
+                (typeof offerMeta.unlockFactKey === "string" ? offerMeta.unlockFactKey : null) ??
+                null,
+              receiverAddress:
+                offer.receiverAddress ??
+                (typeof offerMeta.executionAddress === "string" ? offerMeta.executionAddress : null) ??
+                null,
+            }
+          : null,
+      };
+    });
   },
 });
 
@@ -97,6 +215,17 @@ export const upsertSemanticObject = mutation({
     affordances: v.array(v.string()),
     valueClass: v.optional(v.string()),
     linkedAgentId: v.optional(v.string()),
+    triggerType: v.optional(v.string()),
+    freeActions: v.optional(v.array(v.string())),
+    paidActions: v.optional(v.array(v.string())),
+    premiumOfferKey: v.optional(v.string()),
+    interactionPrompt: v.optional(v.string()),
+    interactionSummary: v.optional(v.string()),
+    inspectEventType: v.optional(v.string()),
+    interactEventType: v.optional(v.string()),
+    paidEventType: v.optional(v.string()),
+    roomLabel: v.optional(v.string()),
+    itemDefName: v.optional(v.string()),
     stateJson: v.optional(v.string()),
     metadataJson: v.optional(v.string()),
   },

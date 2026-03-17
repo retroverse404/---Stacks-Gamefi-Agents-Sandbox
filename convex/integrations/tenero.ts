@@ -1,9 +1,11 @@
 import { v } from "convex/values";
 import { action, internalMutation, query } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 
 const SOURCE = "tenero";
 const DEFAULT_BASE_URL = "https://www.tenero.io";
+const DEFAULT_TICKER_ENDPOINT = "https://api.tenero.io/v1/stacks/tokens";
+const DEFAULT_TICKER_MAX_AGE_MS = 5 * 60 * 1000;
 const teneroInternal: any = (internal as any)["integrations/tenero"];
 
 type TickerRow = {
@@ -103,6 +105,50 @@ function formatPrice(symbol: string, price: number): string {
   return price.toFixed(4);
 }
 
+async function fetchAndStoreSnapshot(
+  ctx: any,
+  {
+    snapshotType,
+    path,
+    scope,
+    title,
+    summary,
+  }: {
+    snapshotType: string;
+    path: string;
+    scope?: string;
+    title?: string;
+    summary?: string;
+  },
+) {
+  const response = await fetch(buildUrl(path), {
+    headers: { Accept: "application/json, text/html;q=0.9,*/*;q=0.8" },
+  });
+
+  if (!response.ok) {
+    const details = await response.text();
+    throw new Error(`Tenero fetch failed: ${response.status} ${details}`);
+  }
+
+  const rawBody = await response.text();
+  const syncedAt = Date.now();
+  const result = await ctx.runMutation(teneroInternal.ingestSnapshot, {
+    snapshotType,
+    scope,
+    title,
+    summary,
+    rawJson: rawBody,
+    syncedAt,
+  });
+
+  return {
+    source: SOURCE,
+    snapshotType,
+    syncedAt,
+    ...result,
+  };
+}
+
 export const syncSnapshot = action({
   args: {
     snapshotType: v.string(),
@@ -112,29 +158,54 @@ export const syncSnapshot = action({
     summary: v.optional(v.string()),
   },
   handler: async (ctx, { snapshotType, path, scope, title, summary }): Promise<any> => {
-    const response = await fetch(buildUrl(path), {
-      headers: { Accept: "application/json, text/html;q=0.9,*/*;q=0.8" },
-    });
-
-    if (!response.ok) {
-      const details = await response.text();
-      throw new Error(`Tenero fetch failed: ${response.status} ${details}`);
-    }
-
-    const rawBody = await response.text();
-    const syncedAt = Date.now();
-    const result = await ctx.runMutation(teneroInternal.ingestSnapshot, {
+    return await fetchAndStoreSnapshot(ctx, {
       snapshotType,
+      path,
       scope,
       title,
       summary,
-      rawJson: rawBody,
-      syncedAt,
+    });
+  },
+});
+
+export const refreshTickerIfStale = action({
+  args: {
+    force: v.optional(v.boolean()),
+    maxAgeMs: v.optional(v.number()),
+  },
+  handler: async (ctx, { force, maxAgeMs }): Promise<any> => {
+    const latest: any = await ctx.runQuery((api as any)["integrations/tenero"].latestSnapshot, {
+      snapshotType: "token-ticker",
+    });
+    const rows = parseTickerRows(latest?.rawJson);
+    const ageMs: number = latest?.syncedAt ? Date.now() - latest.syncedAt : Number.POSITIVE_INFINITY;
+    const resolvedMaxAgeMs = typeof maxAgeMs === "number" && maxAgeMs > 0
+      ? maxAgeMs
+      : DEFAULT_TICKER_MAX_AGE_MS;
+    const stale = !latest || rows.length === 0 || ageMs > resolvedMaxAgeMs;
+
+    if (!force && !stale) {
+      return {
+        ageMs,
+        reason: "fresh",
+        refreshed: false,
+        snapshotType: "token-ticker",
+        source: SOURCE,
+        syncedAt: latest?.syncedAt ?? null,
+      };
+    }
+
+    const result = await fetchAndStoreSnapshot(ctx, {
+      snapshotType: "token-ticker",
+      path: DEFAULT_TICKER_ENDPOINT,
+      title: "Stacks token ticker",
+      summary: "Curated token prices for HUD and market surfaces.",
     });
 
     return {
-      source: SOURCE,
-      snapshotType,
+      ageMs: 0,
+      reason: stale ? "stale" : "forced",
+      refreshed: true,
       ...result,
     };
   },
@@ -164,8 +235,11 @@ export const tickerRows = query({
 
     const rows = parseTickerRows(latest?.rawJson);
     const sourceRows = rows.length > 0 ? rows : FALLBACK_TICKER;
+    const ageMs = latest?.syncedAt ? Date.now() - latest.syncedAt : null;
     return {
       source: rows.length > 0 ? SOURCE : "fallback",
+      ageMs,
+      isStale: !latest || ageMs === null ? true : ageMs > DEFAULT_TICKER_MAX_AGE_MS,
       syncedAt: latest?.syncedAt ?? Date.now(),
       items: sourceRows.map((row) => ({
         symbol: row.symbol,

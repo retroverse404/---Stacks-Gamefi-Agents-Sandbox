@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 dumps/
+agents/AIBTC/wallet-mnemonics.PRIVATE.md
 
 # Editor directories and files
 .vscode/*
@@ -30,3 +31,6 @@ dumps/
 # Local scratch/secrets
 Notes.txt
 .env.local.bak
+.env.deploy
+agents/AIBTC/*.PRIVATE.md
+agents/AIBTC/**/*.PRIVATE.md

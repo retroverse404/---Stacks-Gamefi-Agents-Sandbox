@@ -4,9 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "npm-run-all --parallel dev:frontend dev:backend",
+    "dev": "npm-run-all --parallel dev:frontend dev:backend dev:x402",
     "dev:frontend": "vite",
     "dev:backend": "convex dev --local",
+    "dev:x402": "npm --prefix services/x402-api run start",
     "dev:cloud": "npm-run-all --parallel dev:frontend dev:backend:cloud",
     "dev:backend:cloud": "convex dev",
     "build": "tsc -b && vite build",
@@ -39,12 +40,16 @@
     "users:list:table": "node scripts/list-users.mjs",
     "users:remove-anonymous": "node scripts/manage-users.mjs remove-anonymous",
     "db:check": "node scripts/compact-local-db.mjs --check",
-    "db:compact": "node scripts/compact-local-db.mjs"
+    "db:compact": "node scripts/compact-local-db.mjs",
+    "demo:doctor": "node scripts/demo-doctor.mjs"
   },
   "dependencies": {
     "@auth/core": "^0.37.4",
     "@convex-dev/auth": "^0.0.90",
     "@pixi/sound": "^6.0.1",
+    "@stacks/connect": "^8.2.6",
+    "@stacks/transactions": "^7.3.1",
+    "@stacks/wallet-sdk": "^7.2.0",
     "convex": "^1.31.7",
     "pixi.js": "^8.16.0"
   },

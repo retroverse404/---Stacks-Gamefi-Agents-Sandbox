@@ -105,6 +105,11 @@ function isCrowdedTarget(
   return false;
 }
 
+/** Minimum wander distance to guarantee at least 2 ticks of movement at default speed.
+ * step = speed * (TICK_MS/1000) = 28 * 1.5 = 42px. Min distance > 42 ensures vx/vy > 0
+ * for at least one tick so the client walk animation fires. */
+const MIN_WANDER_DIST = 60;
+
 function findWanderTarget(
   npc: { _id: unknown; mapName: string; spawnX: number; spawnY: number; wanderRadius: number },
   allNpcs: { _id: unknown; mapName: string; x: number; y: number }[],
@@ -115,7 +120,7 @@ function findWanderTarget(
 
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const angle = Math.random() * Math.PI * 2;
-    const dist = Math.random() * npc.wanderRadius;
+    const dist = Math.max(MIN_WANDER_DIST, Math.random() * npc.wanderRadius);
     const candidate = {
       x: npc.spawnX + Math.cos(angle) * dist,
       y: npc.spawnY + Math.sin(angle) * dist,

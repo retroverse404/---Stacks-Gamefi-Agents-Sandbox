@@ -703,6 +703,61 @@ export const grantMapEditor = internalMutation({
   },
 });
 
+/** Admin: upsert a world fact — shared key-value state for inter-agent coordination.
+ *  Use this to publish market data that other NPCs can read into their dialogue context. */
+export const patchWorldFact = mutation({
+  args: {
+    adminKey: v.string(),
+    factKey: v.string(),
+    factType: v.string(),          // "flag" | "status" | "access" | "economy"
+    valueJson: v.string(),
+    scope: v.optional(v.string()), // "world" | "agent" | "object" | "player"
+    subjectId: v.optional(v.string()),
+    mapName: v.optional(v.string()),
+    source: v.optional(v.string()),
+  },
+  handler: async (ctx, { adminKey, factKey, ...rest }) => {
+    requireAdminKey(adminKey);
+    const existing = rest.mapName
+      ? await ctx.db
+          .query("worldFacts")
+          .withIndex("by_map_factKey", (q) =>
+            q.eq("mapName", rest.mapName).eq("factKey", factKey),
+          )
+          .first()
+      : await ctx.db
+          .query("worldFacts")
+          .withIndex("by_factKey", (q) => q.eq("factKey", factKey))
+          .first();
+    const payload = { factKey, ...rest, updatedAt: Date.now() };
+    if (existing) {
+      await ctx.db.patch(existing._id, payload);
+      return { factKey, updated: true, _id: existing._id };
+    }
+    const _id = await ctx.db.insert("worldFacts", payload);
+    return { factKey, inserted: true, _id };
+  },
+});
+
+/** Admin: patch the systemPrompt on an existing NPC profile by instance name. */
+export const patchNpcSystemPrompt = mutation({
+  args: {
+    adminKey: v.string(),
+    name: v.string(),
+    systemPrompt: v.string(),
+  },
+  handler: async (ctx, { adminKey, name, systemPrompt }) => {
+    requireAdminKey(adminKey);
+    const profile = await ctx.db
+      .query("npcProfiles")
+      .withIndex("by_name", (q) => q.eq("name", name))
+      .first();
+    if (!profile) throw new Error(`NPC profile "${name}" not found`);
+    await ctx.db.patch(profile._id, { systemPrompt, updatedAt: Date.now() });
+    return { _id: profile._id, name, updated: true };
+  },
+});
+
 /** Lightweight NPC list for CLI */
 export const listNpcs = query({
   args: { adminKey: v.string() },
