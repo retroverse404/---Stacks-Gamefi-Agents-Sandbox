@@ -23,7 +23,7 @@ In every other AI system, assembling this picture is fragmented, bespoke, and un
 Every named agent has a wallet identity. Premium actions settle in STX through x402.
 The World Feed acts as the campaign log for what the agents and players are doing.
 
-Submission truth:
+Core claim:
 
 `STX is the agent currency on Bitcoin. Five agents. Five wallets. Every premium action settles in STX. Every txid is on Stacks. The dungeon master built the world and trained the agents.`
 
@@ -151,7 +151,7 @@ Keep these as the explicit next lane:
 - `QTC` as a future SIP-010 fungible token if the offchain economy proves worth formalizing
 - richer artifact mint/claim flows after the core payment loop is stable
 
-Use [GameFi-Backlog.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/status/GameFi-Backlog.md) as the canonical backlog reference.
+The broader GameFi economy remains a later layer after the core x402 proof loop is fully captured.
 
 ---
 

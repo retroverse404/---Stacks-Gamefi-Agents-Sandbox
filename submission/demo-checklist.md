@@ -1,9 +1,5 @@
 # Demo Checklist
 
-Purpose: keep the demo evidence pack focused on proof, not wishful claims.
-
-Last verified: 2026-03-17
-
 ## Required Before Submission
 
 - [ ] `npm run demo:doctor` passes or only reports expected non-demo-local differences.

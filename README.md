@@ -16,7 +16,7 @@ The project builds on the 61cygni/tinyrealms 2D engine, providing a strong found
 - **What it is**: a playable Stacks-native agent sandbox.
 - **World shell**: 2D map, NPC, object, and exploration layer.
 - **State layer**: Convex stores agents, offers, world facts, events, zones, and semantic objects.
-- **AI layer**: Braintrust-backed prompts drive in-world dialogue and agent-facing responses.
+- **AI layer**: Braintrust proxy-backed LLM calls use code-defined prompts for in-world dialogue, premium responses, and autonomous agent thoughts.
 - **Payment rail**: x402 gates paid actions like premium briefings and live market quotes.
 - **Contract layer**: Clarity contracts record premium access, room access, object access, collectible artifacts, and the next economy layer on Stacks testnet.
 - **Agent direction**: AIBTC informs the wallet-backed agent pattern and the `market.btc` implementation lineage.
@@ -30,7 +30,7 @@ Submission pack:
 
 ## Flagship Loop
 
-The current live product focus is:
+The flagship loop centers on:
 
 - one world-native premium interaction loop
 - clear STX and Stacks settlement
@@ -135,7 +135,7 @@ E[External Integrations] --> D
 
   A["Experience Layer<br/>maps, art, characters, dialogue UI"]
   B["Game Core<br/>movement, collisions, quests, items, NPC runtime"]
-  C["AI Layer<br/>Braintrust dialogue, future memory and planning"]
+  C["AI Layer<br/>Braintrust proxy-backed dialogue and autonomous agent thoughts"]
   D["Persistence Layer<br/>Convex state and normalized cached records"]
   E["External Integrations<br/>AIBTC, Zero Authority, x402 on Stacks"]
 ```
@@ -154,7 +154,7 @@ flowchart LR
 
 ## Sequential Build Path
 
-The project is being built in a strict order to avoid technical debt and fake claims.
+The platform architecture follows a deliberate order:
 
 ```mermaid
 flowchart TD
@@ -184,7 +184,7 @@ flowchart LR
   L[Live now] --> S[Scaffolded now]
   S --> P[Planned next]
 
-  L["Live now<br/>TinyRealms runtime<br/>Convex backend<br/>Braintrust AI path<br/>Zero Authority ingestion<br/>Tenero live ticker<br/>guide / market / quests surfaces<br/>8 deployed testnet contracts"]
+  L["Live now<br/>TinyRealms runtime<br/>Convex backend<br/>Braintrust proxy AI path<br/>Zero Authority ingestion<br/>Tenero live ticker<br/>guide / market / quests surfaces<br/>8 deployed testnet contracts"]
   S["Scaffolded now<br/>agent state tables<br/>AIBTC-compatible registry<br/>services/x402-api boundary<br/>worldFacts blackboard pattern<br/>deployed but not integrated QTC / SFT economy"]
   P["Planned next<br/>x402 proof capture in demo<br/>purposeful agents<br/>AIBTC account execution<br/>live gameplay economy wiring"]
 ```
@@ -195,7 +195,7 @@ flowchart LR
 - **Integrated map editor** — paint tiles, set collision, define zones, and save maps live to Convex
 - **Sprite pipeline** — import sprite sheets, define animations, and render custom characters
 - **NPC runtime** — server-authoritative NPC state with wandering, intent, and lightweight trading
-- **AI narrative path** — Braintrust-backed dialogue and narrative generation
+- **AI narrative path** — Braintrust proxy-backed dialogue generation and autonomous agent thought loops
 - **Economy primitives** — items, loot, shops, and in-world wallet records
 - **Customizable foundation** — designed to support custom levels, custom characters, and future modular integrations
 
@@ -300,7 +300,7 @@ What is working now:
 - map loading and editing
 - multiplayer presence foundations
 - NPC runtime loop
-- Braintrust-backed AI actions
+- Braintrust proxy-backed AI actions
 
 What is planned next:
 - deeper AI agent sandbox logic
@@ -580,7 +580,7 @@ The product is being built with clear boundaries:
 
 - **Experience layer** — maps, characters, scenes, dialogue presentation
 - **Game core** — movement, collisions, items, quests, NPC runtime state
-- **AI layer** — Braintrust-backed dialogue and future agent memory / planning
+- **AI layer** — Braintrust proxy-backed dialogue, role prompts, and autonomous agent memory/planning
 - **Integration layer** — future AIBTC, Zero Authority, and x402 on Stacks adapters
 
 This separation is intentional so the worldbuilding and asset pipeline can evolve without coupling the game client directly to external wallet or payment infrastructure.
@@ -676,7 +676,7 @@ flowchart LR
 
   A["Experience Layer<br/>maps, art, characters, dialogue UI"]
   B["Game Core<br/>movement, collisions, quests, items, NPC runtime"]
-  C["AI Layer<br/>Braintrust dialogue, future memory and planning"]
+  C["AI Layer<br/>Braintrust proxy-backed dialogue and autonomous agent planning"]
   D["Persistence Layer<br/>Convex state and normalized cached records"]
   E["External Integrations<br/>AIBTC, Zero Authority, x402 on Stacks"]
 ```
