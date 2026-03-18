@@ -1,4 +1,5 @@
 import { ConvexHttpClient } from "convex/browser";
+import { anyApi } from "convex/server";
 import {
   PostConditionMode,
   broadcastTransaction,
@@ -6,7 +7,6 @@ import {
   principalCV,
   stringAsciiCV,
 } from "@stacks/transactions";
-import { api } from "../../../convex/_generated/api.js";
 import type { StacksNetworkName } from "./hiro.js";
 
 const PREMIUM_ACCESS_CONTRACT_ADDRESS = "ST2JDN3QED16X524SE8GWQSTP2MW6D2005AEEGJ9S";
@@ -29,6 +29,7 @@ type PremiumAccessGrantResult = {
 
 let convexClient: ConvexHttpClient | null = null;
 let convexClientUrl = "";
+const api = anyApi as any;
 
 function resolveStacksNetwork(value: string | undefined): StacksNetworkName {
   return value?.toLowerCase() === "mainnet" ? "mainnet" : "testnet";
