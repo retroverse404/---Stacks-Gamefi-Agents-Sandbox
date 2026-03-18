@@ -37,6 +37,17 @@ Both values must match.
   - `npm run backup:world`
 - If touching schema, follow migration phases in `docs/EvolvingTheWorld.md`.
 
+### Hosted baseline quick check (2026-03-19 04:52 IST)
+
+- Render x402 health:
+  - `https://stackshub-x402-api.onrender.com/health`
+- Render metadata checks:
+  - `https://stackshub-x402-api.onrender.com/api/premium/guide-btc/metadata`
+  - `https://stackshub-x402-api.onrender.com/api/premium/market-btc/metadata`
+  - `https://stackshub-x402-api.onrender.com/api/premium/guide-btc/dual-stacking-video/metadata`
+- Convex production target:
+  - `https://zealous-bobcat-847.convex.cloud`
+
 ### Demo doctor expectations
 
 `npm run demo:doctor` checks:
@@ -221,5 +232,5 @@ offline for extended periods, run `npm run db:compact` periodically.
 - `docs/EvolvingTheWorld.md` — architecture and migration strategy
 - `docs/Auth.md` — auth and permissions model
 - `docs/5.3Codex.md` — architecture critique + remediation tracking
-- `docs/deploymet.md` — deployment workflow (Netlify + Convex)
+- `docs/deploymet.md` — deployment workflow (Vercel + Convex + x402)
 - `submission/demo-checklist.md` — judge/demo evidence checklist
