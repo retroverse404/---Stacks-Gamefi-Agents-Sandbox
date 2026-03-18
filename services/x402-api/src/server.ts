@@ -32,7 +32,8 @@ const marketServerAddress = process.env.MARKET_SERVER_ADDRESS || serverAddress;
 const guideServerAddress = process.env.GUIDE_SERVER_ADDRESS || serverAddress;
 const melServerAddress = process.env.MEL_SERVER_ADDRESS || serverAddress;
 const questsServerAddress = process.env.QUESTS_SERVER_ADDRESS || serverAddress;
-const resolvedFacilitatorUrl = facilitatorUrl || `http://127.0.0.1:${port}`;
+const hostedServiceUrl = process.env.RENDER_EXTERNAL_URL || "";
+const resolvedFacilitatorUrl = facilitatorUrl || hostedServiceUrl || `http://127.0.0.1:${port}`;
 
 const GUIDE_PREMIUM_ACCESS: Omit<PremiumAccessGrantConfig, "payerPrincipal" | "paymentTxid"> = {
   agentDisplayName: "guide.btc",
