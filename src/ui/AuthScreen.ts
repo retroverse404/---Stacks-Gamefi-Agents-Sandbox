@@ -14,6 +14,7 @@ import {
   getCachedStacksProviderId,
   type StacksWalletProviderId,
 } from "../lib/stacksWallet.ts";
+import { isLocalConvexUrl } from "../lib/runtimeEnv.ts";
 import "./AuthScreen.css";
 
 // GitHub SVG icon (simple mark)
@@ -120,9 +121,6 @@ export class AuthScreen {
     const card = document.createElement("div");
     card.className = "auth-card";
 
-    // Detect if running locally
-    const isLocal = (import.meta.env.VITE_CONVEX_URL as string)?.includes("127.0.0.1");
-
     const accountHeading = document.createElement("div");
     accountHeading.className = "auth-section-heading";
     accountHeading.textContent = "App account";
@@ -222,20 +220,20 @@ export class AuthScreen {
     passwordInput.addEventListener("keydown", handleEnter);
 
     // -----------------------------------------------------------------------
-    // GitHub OAuth — stubbed out for now (enable later by uncommenting)
+    // GitHub OAuth
     // -----------------------------------------------------------------------
-    // const divider1 = document.createElement("div");
-    // divider1.className = "auth-divider";
-    // divider1.textContent = "or";
-    // card.appendChild(divider1);
-    //
-    // if (!isLocal) {
-    //   const ghBtn = document.createElement("button");
-    //   ghBtn.className = "auth-btn github";
-    //   ghBtn.innerHTML = `<span class="icon">${GITHUB_ICON}</span> Sign in with GitHub`;
-    //   ghBtn.addEventListener("click", () => this.handleGitHub(ghBtn));
-    //   card.appendChild(ghBtn);
-    // }
+    const divider1 = document.createElement("div");
+    divider1.className = "auth-divider";
+    divider1.textContent = "or";
+    card.appendChild(divider1);
+
+    if (!isLocal) {
+      const ghBtn = document.createElement("button");
+      ghBtn.className = "auth-btn github";
+      ghBtn.innerHTML = `<span class="icon">${GITHUB_ICON}</span> Sign in with GitHub`;
+      ghBtn.addEventListener("click", () => this.handleGitHub(ghBtn));
+      card.appendChild(ghBtn);
+    }
 
     // -----------------------------------------------------------------------
     // Status message
@@ -550,7 +548,7 @@ export class AuthScreen {
   }
 
   private shouldClearStoredSessionOnLoad() {
-    const localConvex = (import.meta.env.VITE_CONVEX_URL as string)?.includes("127.0.0.1");
+    const localConvex = isLocalConvexUrl(import.meta.env.VITE_CONVEX_URL as string | undefined);
     return localConvex && (import.meta.env[AUTO_RESUME_SESSION_FLAG] as string) !== "1";
   }
 
