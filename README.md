@@ -1,24 +1,31 @@
-# stacks2d (Dungeons & Agents)
+# Dungeons & Agents
 
-> Dungeons and Agents
+> Stackshub prototype built on TinyRealms
 
-Meaning
-• sandbox for agents
-• world of roles, objects, value, and events
-• simulation surface that can settle value through Bitcoin / Stacks rails
+`Dungeons & Agents` is the current flagship prototype inside `Stackshub`: an experimental portal for modular, remixable, Stacks-native experiences.
 
-This is a playable Stacks-native GameFi sandbox where wallet-backed actors, paid actions (x402), and world state interact inside a multi-agent social simulation.
+This repository currently brings three layers together:
 
-The project builds on the 61cygni/tinyrealms 2D engine, providing a strong foundation for persistent world simulation.
+- `Stackshub` — the umbrella identity: studio, portal, and broader creative direction
+- `Dungeons & Agents` — the current playable demo and hackathon-facing prototype
+- `TinyRealms` — the engine lineage and 2D world foundation this build extends
+
+Prototype note:
+- this is a live testnet concept build, not a finished platform
+- branding, UX, and feature scope are still evolving
+- the current emphasis is proving the world loop, payment flow, and agent-facing interaction model
+
+At its core, this is a playable Stacks-native sandbox where wallet-backed actors, paid actions (`x402`), and persistent world state interact inside a multi-agent social simulation.
 
 ## At A Glance
 
-- **What it is**: a playable Stacks-native agent sandbox.
+- **What it is**: a playable Stacks-native agent sandbox and early Stackshub prototype.
 - **World shell**: 2D map, NPC, object, and exploration layer.
 - **State layer**: Convex stores agents, offers, world facts, events, zones, and semantic objects.
 - **AI layer**: Braintrust proxy-backed LLM calls use code-defined prompts for in-world dialogue, premium responses, and autonomous agent thoughts.
 - **Payment rail**: x402 gates paid actions like premium briefings and live market quotes.
 - **Contract layer**: Clarity contracts record premium access, room access, object access, collectible artifacts, and the next economy layer on Stacks testnet.
+- **Creative direction**: Stackshub explores headless dApps, modular systems, creator economy primitives, and remixable immersive interfaces on Stacks and Bitcoin.
 - **Agent direction**: AIBTC informs the wallet-backed agent pattern and the `market.btc` implementation lineage.
 
 Start here for the clean reading order:
@@ -106,14 +113,17 @@ The flagship loop centers on:
 
 ## Why This Matters
 
-`stacks2d (tinyrealms)` is being developed as a practical bridge between:
+This repository is being developed as a practical bridge between:
 - customizable 2D worldbuilding
 - AI-enhanced NPC interaction
+- headless dApp thinking and modular app surfaces
 - modular agent infrastructure
+- creator economy primitives
+- remixable immersive interfaces
 - future Stacks-native economic and transaction patterns
 
-The goal is not to overclaim finished blockchain integration.
-The goal is to ship a strong game foundation now while cleanly preparing for:
+The goal is not to overclaim a finished platform.
+The goal is to ship a strong playable prototype now while cleanly preparing for:
 - AIBTC-aligned agent tooling
 - x402 on Stacks paid service flows
 - creator economy mechanics
@@ -292,7 +302,13 @@ This is the current application-level version of social propagation:
 
 ## Current Status
 
-This repository is intentionally presented as a **work in progress**.
+This repository is intentionally presented as a **live prototype**.
+
+Current framing:
+- `Stackshub` is the umbrella concept and evolving brand
+- `Dungeons & Agents` is the current public prototype
+- this build runs on testnet and prototype infrastructure
+- naming, branding, and product boundaries remain flexible while the core loop is being proven
 
 What is working now:
 - web client and Convex backend
@@ -553,8 +569,8 @@ convex/               Convex backend
 │   ├── dialogue.ts
 │   ├── events.ts
 │   └── storyAi.ts    Braintrust LLM actions
-├── agents/           Planned agent sandbox modules
-├── integrations/     Planned external adapters (AIBTC, Zero Authority, x402)
+├── agents/           Agent runtime, registry, bindings, and state machines
+├── integrations/     External adapters and caches (Zero Authority, Tenero, x402)
 └── mechanics/        Game mechanics backend
     ├── items.ts
     ├── inventory.ts
@@ -576,7 +592,7 @@ src/                  Frontend
 
 ## Architecture Direction
 
-The product is being built with clear boundaries:
+The system is being built with clear boundaries:
 
 - **Experience layer** — maps, characters, scenes, dialogue presentation
 - **Game core** — movement, collisions, items, quests, NPC runtime state
