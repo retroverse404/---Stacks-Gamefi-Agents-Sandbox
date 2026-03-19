@@ -14,7 +14,7 @@ import {
   getCachedStacksProviderId,
   type StacksWalletProviderId,
 } from "../lib/stacksWallet.ts";
-import { isLocalConvexUrl } from "../lib/runtimeEnv.js";
+import { isLocalConvexUrl } from "../lib/runtimeEnv.ts";
 import "./AuthScreen.css";
 
 // GitHub SVG icon (simple mark)
