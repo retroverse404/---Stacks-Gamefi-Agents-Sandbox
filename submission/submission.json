@@ -1,13 +1,13 @@
 {
   "project_name": "Dungeons & Agents",
   "repo_name": "stacks2d-dungeons-agents",
-  "repo_url": "https://github.com/retroverse404/---stacks2d-dungeons-agents",
+  "repo_url": "https://github.com/retroverse404/---Stacks-Gamefi-Agents-Sandbox",
   "tagline": "A playable Stacks-native agent world where five wallet-backed AI agents earn in STX through world-triggered premium actions.",
   "one_liner": "Five AI agents with real testnet wallets live inside a 2D world. Players pay them in STX through x402, premium access is recorded on Stacks, and the World Feed reflects the result.",
   "status": "active",
-  "last_verified": "2026-03-17",
+  "last_verified": "2026-03-19",
   "demo_video_url": "",
-  "live_demo_url": "",
+  "live_demo_url": "https://stackshub.space",
   "primary_track": "Stacks + x402",
   "chain_focus": "Stacks",
   "stack": [

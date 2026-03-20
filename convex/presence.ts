@@ -3,6 +3,8 @@ import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getRequestUserId } from "./lib/getRequestUserId";
 
+const GUEST_HEARTBEAT_FACT_KEY = "guest-viewer-heartbeat";
+
 async function requireOwnedProfile(ctx: any, profileId: any) {
   const userId = await getRequestUserId(ctx);
   if (!userId) throw new Error("Not authenticated");
@@ -76,6 +78,48 @@ export const listByMap = query({
       .query("presence")
       .withIndex("by_map", (q) => q.eq("mapName", mapName))
       .collect();
+  },
+});
+
+/** Lightweight heartbeat used by guest/demo viewers to keep NPCs ticking. */
+export const guestHeartbeat = mutation({
+  args: { mapName: v.optional(v.string()) },
+  handler: async (ctx, { mapName }) => {
+    const now = Date.now();
+    const existing = await ctx.db
+      .query("worldFacts")
+      .withIndex("by_factKey", (q) => q.eq("factKey", GUEST_HEARTBEAT_FACT_KEY))
+      .first();
+
+    const payload = {
+      mapName,
+      factKey: GUEST_HEARTBEAT_FACT_KEY,
+      factType: "status",
+      valueJson: JSON.stringify({
+        viewer: "guest",
+        mapName: mapName ?? null,
+        heartbeatAt: now,
+      }),
+      scope: "world",
+      source: "presence.guestHeartbeat",
+      updatedAt: now,
+    };
+
+    if (existing) {
+      await ctx.db.patch(existing._id, payload);
+    } else {
+      await ctx.db.insert("worldFacts", payload);
+    }
+
+    const anyNpc = await ctx.db.query("npcState").first();
+    if (anyNpc) {
+      const STALE_MS = 500 * 6;
+      if ((anyNpc.lastTick ?? 0) < now - STALE_MS) {
+        await ctx.scheduler.runAfter(0, internal.npcEngine.tick, {});
+      }
+    }
+
+    return { ok: true, heartbeatAt: now };
   },
 });
 

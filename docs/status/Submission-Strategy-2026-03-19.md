@@ -113,7 +113,8 @@ Lead with:
 |---|---|---|
 | Convex cloud | https://zealous-bobcat-847.convex.cloud | Live |
 | Render x402-api | https://stackshub-x402-api.onrender.com | Live, configured:true |
-| Vercel frontend | https://stacks-gamefi-agents-sandbox-vbqm.vercel.app | Live, login working |
+| Frontend custom domain | https://stackshub.space | Live, serving the TinyRealms build |
+| Legacy Vercel alias | https://stacks-gamefi-agents-sandbox-vbqm.vercel.app | Stale, returns `DEPLOYMENT_NOT_FOUND` on GET |
 
 ---
 

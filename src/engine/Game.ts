@@ -21,6 +21,7 @@ import {
 } from "../splash/screens/RetroCaptchaSplash.ts";
 
 const PRESENCE_INTERVAL_MS = 250;   // how often to push position to Convex
+const GUEST_HEARTBEAT_INTERVAL_MS = 3_000;
 const SAVE_INTERVAL_MS = 30_000;   // how often to persist position to profile (was 10s)
 const PRESENCE_MOVE_THRESHOLD = 2; // px — skip presence update if player hasn't moved
 const DEFAULT_ITEM_PICKUP_SFX = "/assets/audio/take-item.mp3";
@@ -212,6 +213,7 @@ export class Game {
 
   // Multiplayer
   private presenceTimer: ReturnType<typeof setInterval> | null = null;
+  private guestHeartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private saveTimer: ReturnType<typeof setInterval> | null = null;
   private presenceUnsub: (() => void) | null = null;
   private lastPresenceX = 0;
@@ -315,10 +317,14 @@ export class Game {
 
     this.initialized = true;
 
-    // Seed any static JSON maps that aren't yet in Convex (skip for guests — read-only)
-    if (!this.isGuest) {
+    const isLocalDemo = isLocalConvexUrl(import.meta.env.VITE_CONVEX_URL as string | undefined);
+
+    // Seed any static JSON maps that aren't yet in Convex.
+    // Local guest mode is allowed to bootstrap demo data so the sandbox still works
+    // even if auth is failing during a live MVP run.
+    if (!this.isGuest || isLocalDemo) {
       await this.seedStaticMaps();
-      if (isLocalConvexUrl(import.meta.env.VITE_CONVEX_URL as string | undefined)) {
+      if (isLocalDemo) {
         try {
           const convex = getConvexClient();
           await convex.mutation((api as any).localDev.ensureDemoNpc, { mapName: "Cozy Cabin" });
@@ -582,7 +588,7 @@ export class Game {
         return;
       }
 
-      if (loadedStaticMap && !this.isGuest) {
+      if (loadedStaticMap && (!this.isGuest || isLocalConvexUrl(import.meta.env.VITE_CONVEX_URL as string | undefined))) {
         try {
           await this.seedMapToConvex(mapData);
           if (isLocalConvexUrl(import.meta.env.VITE_CONVEX_URL as string | undefined)) {
@@ -658,14 +664,12 @@ export class Game {
       this.subscribeToNpcState(this.currentMapName);
       this.subscribeToAgentChatter(this.currentMapName);
 
-      // Ensure the NPC tick loop is running on the server (skip for guests)
-      if (!this.isGuest) {
-        try {
-          const convex = getConvexClient();
-          await convex.mutation(api.npcEngine.ensureLoop, {});
-        } catch (e) {
-          console.warn("NPC ensureLoop failed (OK on first run):", e);
-        }
+      // Ensure the NPC tick loop is running on the server.
+      try {
+        const convex = getConvexClient();
+        await convex.mutation(api.npcEngine.ensureLoop, {});
+      } catch (e) {
+        console.warn("NPC ensureLoop failed (OK on first run):", e);
       }
 
       // Start background music (use map's musicUrl, fallback to default)
@@ -871,10 +875,8 @@ export class Game {
       this.stopPresence();
       this.startPresence();
 
-      // 9) Start NPC loop (skip for guests — they can't trigger mutations)
-      if (!this.isGuest) {
-        await convex.mutation(api.npcEngine.ensureLoop, {}).catch(() => {});
-      }
+      // 9) Start NPC loop
+      await convex.mutation(api.npcEngine.ensureLoop, {}).catch(() => {});
 
       // 10) Switch music if the new map has a different track
       this.playMapMusic(mapData);
@@ -1144,7 +1146,8 @@ export class Game {
     const profileId = this.profile._id as Id<"profiles">;
     console.log(`[Presence] Starting for profile "${this.profile.name}" (${profileId}) on map "${this.currentMapName}"${this.isGuest ? " [GUEST — read-only]" : ""}`);
 
-    // Guests don't broadcast their position or save it, but still see others
+    // Guests don't broadcast auth-bound presence, but they still send a lightweight
+    // heartbeat so the demo world stays alive during guest-only sessions.
     if (!this.isGuest) {
       // 1) Push local position + velocity periodically (delta-only to reduce DB writes)
       this.presenceTimer = setInterval(() => {
@@ -1170,6 +1173,14 @@ export class Game {
           })
           .catch((err) => console.warn("Presence update failed:", err));
       }, PRESENCE_INTERVAL_MS);
+    } else {
+      const sendGuestHeartbeat = () => {
+        convex
+          .mutation(api.presence.guestHeartbeat, { mapName: this.currentMapName })
+          .catch((err) => console.warn("Guest heartbeat failed:", err));
+      };
+      sendGuestHeartbeat();
+      this.guestHeartbeatTimer = setInterval(sendGuestHeartbeat, GUEST_HEARTBEAT_INTERVAL_MS);
     }
 
     // 2) Subscribe to presence of others on this map (guests included — read-only)
@@ -1229,6 +1240,10 @@ export class Game {
     if (this.presenceTimer) {
       clearInterval(this.presenceTimer);
       this.presenceTimer = null;
+    }
+    if (this.guestHeartbeatTimer) {
+      clearInterval(this.guestHeartbeatTimer);
+      this.guestHeartbeatTimer = null;
     }
     if (this.saveTimer) {
       clearInterval(this.saveTimer);
