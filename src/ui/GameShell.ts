@@ -13,6 +13,7 @@ import { CharacterPanel } from "./CharacterPanel.ts";
 import { NpcEditorPanel } from "./NpcEditorPanel.ts";
 import { ItemEditorPanel } from "./ItemEditorPanel.ts";
 import type { AppMode, ProfileData } from "../engine/types.ts";
+import { getGateRemainingMs, isGateEnabled, isGateUnlocked } from "../lib/gateAccess.ts";
 import "./GameShell.css";
 
 export class GameShell {
@@ -25,6 +26,7 @@ export class GameShell {
   private profile: ProfileData;
   private debugPanel: HTMLElement | null = null;
   private debugTimer: ReturnType<typeof setInterval> | null = null;
+  private sessionHudTimer: ReturnType<typeof setInterval> | null = null;
 
   // UI panels
   private hud!: HUD;
@@ -139,6 +141,7 @@ export class GameShell {
     this.hud = new HUD(this.mode);
     this.el.appendChild(this.hud.el);
     this.hud.setNowPlaying(game.getCurrentMusicCredit());
+    this.startSessionHud();
 
     if (import.meta.env.DEV) {
       this.buildDebugPanel();
@@ -249,9 +252,27 @@ export class GameShell {
   show() { this.el.style.display = ""; }
   hide() { this.el.style.display = "none"; }
 
+  private startSessionHud() {
+    if (!isGateEnabled() || !isGateUnlocked()) {
+      this.hud.setSessionCountdown(null);
+      return;
+    }
+
+    const paint = () => {
+      this.hud.setSessionCountdown(getGateRemainingMs());
+    };
+
+    paint();
+    this.sessionHudTimer = setInterval(paint, 1000);
+  }
+
   destroy() {
     if (this.muteKeyHandler) {
       document.removeEventListener("keydown", this.muteKeyHandler);
+    }
+    if (this.sessionHudTimer) {
+      clearInterval(this.sessionHudTimer);
+      this.sessionHudTimer = null;
     }
     if (this.debugTimer) {
       clearInterval(this.debugTimer);

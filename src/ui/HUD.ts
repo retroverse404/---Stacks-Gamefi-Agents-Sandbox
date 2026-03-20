@@ -27,6 +27,7 @@ export class HUD {
   readonly el: HTMLElement;
   private topRow: HTMLElement;
   private label: HTMLElement;
+  private sessionTimerEl: HTMLElement;
   private tickerViewport: HTMLElement;
   private tickerTrack: HTMLElement;
   private tickerSource: HTMLElement;
@@ -46,6 +47,11 @@ export class HUD {
     this.label.className = "hud-mode-label";
     this.label.textContent = `${mode.toUpperCase()} MODE`;
     this.topRow.appendChild(this.label);
+
+    this.sessionTimerEl = document.createElement("div");
+    this.sessionTimerEl.className = "hud-session-timer";
+    this.sessionTimerEl.style.display = "none";
+    this.topRow.appendChild(this.sessionTimerEl);
 
     const ticker = document.createElement("div");
     ticker.className = "hud-ticker";
@@ -95,6 +101,20 @@ export class HUD {
     this.nowPlayingEl.style.display = "";
     const context = nowPlaying.context ? `${nowPlaying.context} · ` : "";
     this.nowPlayingMeta.textContent = `${context}${nowPlaying.title} · ${nowPlaying.artist}`;
+  }
+
+  setSessionCountdown(remainingMs: number | null) {
+    if (remainingMs == null) {
+      this.sessionTimerEl.style.display = "none";
+      return;
+    }
+
+    const safeMs = Math.max(0, remainingMs);
+    const totalSeconds = Math.ceil(safeMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    this.sessionTimerEl.style.display = "";
+    this.sessionTimerEl.textContent = `LIVE SESSION ${minutes}:${String(seconds).padStart(2, "0")}`;
   }
 
   private subscribeTicker() {

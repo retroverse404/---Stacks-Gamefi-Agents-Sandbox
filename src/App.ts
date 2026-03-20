@@ -4,7 +4,9 @@
  *       AuthScreen → Game (guest mode — read-only, no auth)
  */
 import type { ConvexClient } from "convex/browser";
+import { clearGateUnlocked, getGateRemainingMs, isGateEnabled, isGateUnlocked } from "./lib/gateAccess.ts";
 import { AuthScreen } from "./ui/AuthScreen.ts";
+import { GateScreen } from "./ui/GateScreen.ts";
 import { ProfileScreen } from "./ui/ProfileScreen.ts";
 import { GameShell } from "./ui/GameShell.ts";
 import { SplashHost } from "./splash/SplashHost.ts";
@@ -19,10 +21,12 @@ const LOCAL_DEV_AUTO_AUTH_FLAG = "VITE_LOCAL_DEV_AUTO_AUTH";
 export class App {
   private root: HTMLElement;
   private convex: ConvexClient;
+  private gateScreen: GateScreen | null = null;
   private authScreen: AuthScreen | null = null;
   private profileScreen: ProfileScreen | null = null;
   private gameShell: GameShell | null = null;
   private splashHost: SplashHost | null = null;
+  private gateSessionTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(root: HTMLElement, convex: ConvexClient) {
     this.root = root;
@@ -34,12 +38,27 @@ export class App {
       await this.startLocalDev();
       return;
     }
+    if (this.shouldShowGate()) {
+      this.showGateScreen();
+      return;
+    }
+    this.startGateSessionMonitor();
     this.showAuthScreen();
   }
 
   // ---------------------------------------------------------------------------
   // Auth
   // ---------------------------------------------------------------------------
+
+  private showGateScreen() {
+    this.stopGateSessionMonitor();
+    this.clear();
+    this.gateScreen = new GateScreen(() => {
+      this.startGateSessionMonitor();
+      this.showAuthScreen();
+    });
+    this.root.appendChild(this.gateScreen.el);
+  }
 
   private showAuthScreen() {
     this.clear();
@@ -114,6 +133,10 @@ export class App {
   // ---------------------------------------------------------------------------
 
   private clear() {
+    if (this.gateScreen) {
+      this.gateScreen.destroy();
+      this.gateScreen = null;
+    }
     if (this.authScreen) {
       this.authScreen.destroy();
       this.authScreen = null;
@@ -134,11 +157,38 @@ export class App {
   }
 
   destroy() {
+    this.stopGateSessionMonitor();
     this.clear();
   }
 
   private isLocalDev() {
     return isLocalConvexUrl(import.meta.env.VITE_CONVEX_URL as string | undefined);
+  }
+
+  private shouldShowGate() {
+    return isGateEnabled() && !isGateUnlocked() && !this.isLocalDev();
+  }
+
+  private startGateSessionMonitor() {
+    this.stopGateSessionMonitor();
+    if (!isGateEnabled() || !isGateUnlocked()) return;
+    const remainingMs = getGateRemainingMs();
+    if (remainingMs <= 0) {
+      clearGateUnlocked();
+      this.showGateScreen();
+      return;
+    }
+    this.gateSessionTimer = setTimeout(() => {
+      clearGateUnlocked();
+      this.showGateScreen();
+    }, remainingMs);
+  }
+
+  private stopGateSessionMonitor() {
+    if (this.gateSessionTimer) {
+      clearTimeout(this.gateSessionTimer);
+      this.gateSessionTimer = null;
+    }
   }
 
   private isLocalDevAutoAuthEnabled() {
