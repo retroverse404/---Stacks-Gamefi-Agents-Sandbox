@@ -59,6 +59,7 @@
 }
 
 .auth-content {
+  --auth-copy-width: 15.9rem;
   position: relative;
   z-index: 1;
   display: flex;
@@ -71,23 +72,19 @@
   margin: 0 auto;
 }
 
-.auth-brand {
-  display: grid;
-  grid-template-columns: auto auto;
-  column-gap: 14px;
-  align-items: start;
-  justify-content: center;
-  width: fit-content;
-  margin: 0 auto 10px;
+.auth-brand-block {
+  width: min(100%, var(--auth-copy-width));
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin: 0 auto 22px;
 }
 
-.auth-brand-icon {
-  width: 34px;
-  height: 34px;
-  flex: 0 0 auto;
-  object-fit: contain;
-  opacity: 0.98;
-  margin-top: 8px;
+.auth-brand {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  margin: 0 0 10px;
 }
 
 .auth-brand-wordmark {
@@ -118,27 +115,46 @@
 }
 
 .auth-screen .auth-subtitle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
   color: rgba(255, 255, 255, 0.92);
   font-size: 0.86rem;
   font-weight: 600;
+  width: 100%;
   margin-bottom: 8px;
-  text-align: center;
+  margin-left: 0;
+  margin-right: 0;
+  text-align: left;
   letter-spacing: 0.01em;
-  max-width: 24rem;
   text-wrap: balance;
+}
+
+.auth-subtitle-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  opacity: 0.96;
+  display: block;
+  transform: translateY(1px);
 }
 
 .auth-support-line {
   color: rgba(255, 255, 255, 0.68);
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   line-height: 1.42;
-  text-align: center;
-  max-width: 29rem;
-  margin-bottom: 22px;
-  padding: 0 8px;
+  text-align: left;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 0;
+  margin-left: 0;
+  margin-right: 0;
+  padding: 0;
   text-wrap: balance;
   font-family: var(--font-mono, monospace);
-  letter-spacing: 0.015em;
+  letter-spacing: 0;
   opacity: 0.9;
 }
 
@@ -493,6 +509,11 @@
 
 /* Small mobile — tighten padding */
 @media (max-width: 480px) {
+  .auth-brand-block {
+    width: min(100%, 15rem);
+    margin-bottom: 20px;
+  }
+
   .auth-card {
     padding: 22px 18px;
     border-radius: var(--radius-lg);
@@ -500,16 +521,6 @@
 
   .auth-screen h1 {
     font-size: 2.5rem;
-  }
-
-  .auth-brand {
-    column-gap: 12px;
-  }
-
-  .auth-brand-icon {
-    width: 28px;
-    height: 28px;
-    margin-top: 6px;
   }
 
   .auth-brand-stacks {
@@ -527,10 +538,8 @@
   }
 
   .auth-support-line {
-    font-size: 0.82rem;
+    font-size: 0.76rem;
     line-height: 1.4;
-    margin-bottom: 20px;
-    max-width: 20rem;
   }
 
   .auth-btn {
@@ -546,6 +555,10 @@
 @media (max-width: 360px) {
   .auth-screen {
     padding: 16px 12px;
+  }
+
+  .auth-brand-block {
+    width: min(100%, 14.4rem);
   }
 
   .auth-card {

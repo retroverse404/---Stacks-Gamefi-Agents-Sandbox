@@ -108,15 +108,13 @@ export class AuthScreen {
     content.className = "auth-content";
     this.el.appendChild(content);
 
+    const brandBlock = document.createElement("div");
+    brandBlock.className = "auth-brand-block";
+    content.appendChild(brandBlock);
+
     const brand = document.createElement("div");
     brand.className = "auth-brand";
-    content.appendChild(brand);
-
-    const brandIcon = document.createElement("img");
-    brandIcon.className = "auth-brand-icon";
-    brandIcon.src = STACKSHUB_MARK_SRC;
-    brandIcon.alt = "Stackshub";
-    brand.appendChild(brandIcon);
+    brandBlock.appendChild(brand);
 
     const brandWordmark = document.createElement("div");
     brandWordmark.className = "auth-brand-wordmark";
@@ -134,13 +132,21 @@ export class AuthScreen {
 
     const sub = document.createElement("div");
     sub.className = "auth-subtitle";
-    sub.textContent = "Bitcoin, made playable.";
-    content.appendChild(sub);
+    const subText = document.createElement("span");
+    subText.textContent = "Bitcoin DeFi, made playable.";
+    sub.appendChild(subText);
+    const subIcon = document.createElement("img");
+    subIcon.className = "auth-subtitle-icon";
+    subIcon.src = STACKSHUB_MARK_SRC;
+    subIcon.alt = "";
+    subIcon.setAttribute("aria-hidden", "true");
+    sub.appendChild(subIcon);
+    brandBlock.appendChild(sub);
 
     const support = document.createElement("div");
     support.className = "auth-support-line";
-    support.textContent = "An agentic sandbox for simulated worlds, wallets and transactions.";
-    content.appendChild(support);
+    support.innerHTML = "A sandbox for simulated worlds,<br>AI agents, wallets and transactions.";
+    brandBlock.appendChild(support);
 
     const card = document.createElement("div");
     card.className = "auth-card";
