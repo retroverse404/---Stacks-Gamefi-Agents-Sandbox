@@ -134,7 +134,7 @@ export class AuthScreen {
 
     const sub = document.createElement("div");
     sub.className = "auth-subtitle";
-    sub.textContent = "The Stacks ecosystem, made playable.";
+    sub.textContent = "Bitcoin, made playable.";
     content.appendChild(sub);
 
     const support = document.createElement("div");
