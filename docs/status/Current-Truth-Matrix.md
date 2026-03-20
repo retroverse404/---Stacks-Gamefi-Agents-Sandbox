@@ -60,3 +60,7 @@ The current wallet-backed agent rows should be readable directly from Convex usi
 | world | `world-lobby`, `world-objects` | room/object state and access |
 | artifacts | `floppy-disk-nft`, `cassette-nft`, `wax-cylinder-nft` | unique collectible media artifacts |
 | future economy | `qtc-token`, `sft-items` | fungible and repeatable item economy |
+
+## Contract Evolution Log
+
+- **2026-03-20**: Updated `cassette-nft` and `floppy-disk-nft` with `(trait-of sip009-nft)`, response-wrapped read helpers, `asserts!` guards, and `set-contract-owner` so each artifact meets SIP-009 expectations.
