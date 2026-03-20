@@ -7,6 +7,7 @@ import { WorldItemLayer } from "./WorldItemLayer.ts";
 import { InputManager } from "./InputManager.ts";
 import { AudioManager, type MusicPlaybackSnapshot } from "./AudioManager.ts";
 import { getConvexClient } from "../lib/convexClient.ts";
+import { isLocalConvexUrl } from "../lib/runtimeEnv.ts";
 import { X402RequestError, resolveX402Url, x402Fetch } from "../lib/x402.ts";
 import { api } from "../../convex/_generated/api";
 import type { AppMode, MapData, Portal, ProfileData, PresenceData } from "./types.ts";
@@ -317,7 +318,7 @@ export class Game {
     // Seed any static JSON maps that aren't yet in Convex (skip for guests — read-only)
     if (!this.isGuest) {
       await this.seedStaticMaps();
-      if ((import.meta.env.VITE_CONVEX_URL as string)?.includes("127.0.0.1")) {
+      if (isLocalConvexUrl(import.meta.env.VITE_CONVEX_URL as string | undefined)) {
         try {
           const convex = getConvexClient();
           await convex.mutation((api as any).localDev.ensureDemoNpc, { mapName: "Cozy Cabin" });
@@ -584,7 +585,7 @@ export class Game {
       if (loadedStaticMap && !this.isGuest) {
         try {
           await this.seedMapToConvex(mapData);
-          if ((import.meta.env.VITE_CONVEX_URL as string)?.includes("127.0.0.1")) {
+          if (isLocalConvexUrl(import.meta.env.VITE_CONVEX_URL as string | undefined)) {
             const convex = getConvexClient();
             await convex.mutation((api as any).localDev.ensureDemoNpc, { mapName: mapData.name });
           }

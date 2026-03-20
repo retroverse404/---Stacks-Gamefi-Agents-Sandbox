@@ -8,15 +8,27 @@ import {
 } from "@convex-dev/auth/server";
 import { Scrypt } from "lucia";
 
+function getRuntimeEnv() {
+  return (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
+}
+
 function isLocalDeployment() {
-  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
-    ?.env;
+  const env = getRuntimeEnv();
   const deployment = env?.CONVEX_DEPLOYMENT ?? "";
   const siteUrl = env?.CONVEX_SITE_URL ?? "";
   return (
     deployment.startsWith("local:") ||
     siteUrl.includes("127.0.0.1") ||
     siteUrl.includes("localhost")
+  );
+}
+
+function isGitHubAuthEnabled() {
+  const env = getRuntimeEnv();
+  return (
+    env.AUTH_ENABLE_GITHUB_AUTH === "true" &&
+    Boolean(env.AUTH_GITHUB_ID) &&
+    Boolean(env.AUTH_GITHUB_SECRET)
   );
 }
 
@@ -96,6 +108,10 @@ const PasswordWithLocalReset = ConvexCredentials({
   },
 });
 
+const providers = isGitHubAuthEnabled()
+  ? [GitHub, PasswordWithLocalReset]
+  : [PasswordWithLocalReset];
+
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [GitHub, PasswordWithLocalReset],
+  providers,
 });

@@ -19,6 +19,33 @@ const RESTORE_ALLOWED_TABLES = new Set([
   "messages",
 ]);
 
+const adminPortalValidator = v.object({
+  name: v.string(),
+  x: v.number(),
+  y: v.number(),
+  width: v.number(),
+  height: v.number(),
+  targetMap: v.string(),
+  targetSpawn: v.string(),
+  direction: v.optional(v.string()),
+  transition: v.optional(v.string()),
+});
+
+const adminLabelValidator = v.object({
+  name: v.string(),
+  x: v.number(),
+  y: v.number(),
+  width: v.number(),
+  height: v.number(),
+});
+
+const adminLayerValidator = v.object({
+  name: v.string(),
+  type: v.union(v.literal("bg"), v.literal("obj"), v.literal("overlay")),
+  tiles: v.string(),
+  visible: v.boolean(),
+});
+
 /** Delete all chat messages */
 export const clearChat = mutation({
   args: { adminKey: v.string() },
@@ -182,6 +209,58 @@ export const backfillMaps = mutation({
       }
     }
     return { total: maps.length, patched };
+  },
+});
+
+/** Seed or replace a system map from static JSON without requiring a profile/editor session. */
+export const seedSystemMap = mutation({
+  args: {
+    adminKey: v.string(),
+    name: v.string(),
+    width: v.number(),
+    height: v.number(),
+    tileWidth: v.number(),
+    tileHeight: v.number(),
+    tilesetUrl: v.optional(v.string()),
+    tilesetPxW: v.number(),
+    tilesetPxH: v.number(),
+    layers: v.array(adminLayerValidator),
+    collisionMask: v.string(),
+    labels: v.array(adminLabelValidator),
+    portals: v.optional(v.array(adminPortalValidator)),
+    animationUrl: v.optional(v.string()),
+    musicUrl: v.optional(v.string()),
+    ambientSoundUrl: v.optional(v.string()),
+    combatEnabled: v.optional(v.boolean()),
+    status: v.optional(v.string()),
+  },
+  handler: async (ctx, { adminKey, ...map }) => {
+    requireAdminKey(adminKey);
+
+    const existing = await ctx.db
+      .query("maps")
+      .withIndex("by_name", (q) => q.eq("name", map.name))
+      .first();
+
+    const payload = {
+      ...map,
+      portals: map.portals ?? [],
+      status: map.status ?? "published",
+      combatEnabled: map.combatEnabled ?? false,
+      mapType: "system",
+      updatedAt: Date.now(),
+    };
+
+    if (existing) {
+      await ctx.db.patch(existing._id, payload);
+      return { mapId: existing._id, action: "patched" as const, name: map.name };
+    }
+
+    const mapId = await ctx.db.insert("maps", {
+      ...payload,
+      editors: [],
+    } as any);
+    return { mapId, action: "inserted" as const, name: map.name };
   },
 });
 

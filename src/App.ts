@@ -10,6 +10,7 @@ import { GameShell } from "./ui/GameShell.ts";
 import { SplashHost } from "./splash/SplashHost.ts";
 import type { ProfileData } from "./engine/types.ts";
 import { getAuthManager } from "./lib/convexClient.ts";
+import { isLocalConvexUrl } from "./lib/runtimeEnv.ts";
 
 const LOCAL_DEV_ID_KEY = "__tinyrealmsLocalDevId";
 const LOCAL_DEV_SIGNED_OUT_KEY = "__tinyrealmsLocalDevSignedOut";
@@ -137,7 +138,7 @@ export class App {
   }
 
   private isLocalDev() {
-    return (import.meta.env.VITE_CONVEX_URL as string)?.includes("127.0.0.1");
+    return isLocalConvexUrl(import.meta.env.VITE_CONVEX_URL as string | undefined);
   }
 
   private isLocalDevAutoAuthEnabled() {

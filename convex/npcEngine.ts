@@ -767,6 +767,11 @@ function randomDuration(minMs: number, maxMs: number) {
 export const tick = internalMutation({
   args: {},
   handler: async (ctx) => {
+    // Stop the loop when no players are online — avoids burning DB bandwidth.
+    // presence.update will restart it when someone connects.
+    const anyPresence = await ctx.db.query("presence").first();
+    if (!anyPresence) return;
+
     const allNpcs = await ctx.db.query("npcState").collect();
     if (allNpcs.length === 0) return; // nothing to do, loop stops naturally
 

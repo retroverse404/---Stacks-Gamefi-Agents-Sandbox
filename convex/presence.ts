@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getRequestUserId } from "./lib/getRequestUserId";
 
 async function requireOwnedProfile(ctx: any, profileId: any) {
@@ -54,6 +55,15 @@ export const update = mutation({
       await ctx.db.patch(existing._id, data);
     } else {
       await ctx.db.insert("presence", data);
+    }
+
+    // Restart the NPC tick loop if it has gone dormant (no players were online).
+    const anyNpc = await ctx.db.query("npcState").first();
+    if (anyNpc) {
+      const STALE_MS = 500 * 6; // 6 missed ticks = loop is dead
+      if ((anyNpc.lastTick ?? 0) < Date.now() - STALE_MS) {
+        await ctx.scheduler.runAfter(0, internal.npcEngine.tick, {});
+      }
     }
   },
 });

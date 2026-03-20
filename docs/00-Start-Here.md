@@ -7,7 +7,7 @@ Audience:
 - reviewers trying to understand current truth quickly
 - future documentation cleanup passes
 
-Last verified: 2026-03-17
+Last verified: 2026-03-19
 
 ## Reading Order
 
@@ -27,6 +27,14 @@ Read these in order:
 12. [Agent-Wallet-Ledger.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Agent-Wallet-Ledger.md)
 13. [Agent-Wallet-Architecture.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Agent-Wallet-Architecture.md)
 14. [Operations.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Operations.md)
+
+## Codex Session Logs
+
+AI session changelogs — read these to understand what was changed and why, in order:
+
+- [5.3Codex.md](5.3Codex.md) — auth hardening, map cascade, world-item upsert, CI, backup/restore
+- [Codex-2026-03-19-Bandwidth-Fix.md](Codex-2026-03-19-Bandwidth-Fix.md) — npcEngine tick bandwidth emergency fix, presence-gated loop
+- [Convex-Bandwidth-Optimizations.md](Convex-Bandwidth-Optimizations.md) — living doc, deferred bandwidth improvements
 
 ## Folder Map
 

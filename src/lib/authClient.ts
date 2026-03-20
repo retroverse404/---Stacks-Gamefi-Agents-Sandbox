@@ -13,6 +13,7 @@ import { api } from "../../convex/_generated/api";
 const JWT_KEY = "__convexAuthJWT";
 const REFRESH_KEY = "__convexAuthRefreshToken";
 const VERIFIER_KEY = "__convexAuthOAuthVerifier";
+const GITHUB_AUTH_ENABLED = ((import.meta as any).env.VITE_ENABLE_GITHUB_AUTH as string | undefined) === "true";
 
 export class AuthManager {
   private client: ConvexClient;
@@ -46,6 +47,10 @@ export class AuthManager {
     this._onAuthChange = callback;
   }
 
+  isGitHubAuthEnabled(): boolean {
+    return GITHUB_AUTH_ENABLED;
+  }
+
   /**
    * Validate that the currently stored token is accepted by Convex.
    * If invalid/expired, clear local tokens and return false.
@@ -67,6 +72,8 @@ export class AuthManager {
    * If so, exchange it for tokens and return true.
    */
   async handleOAuthCallback(): Promise<boolean> {
+    if (!GITHUB_AUTH_ENABLED) return false;
+
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     if (!code) return false;
@@ -110,8 +117,17 @@ export class AuthManager {
 
   /** Start GitHub OAuth flow (redirects the browser) */
   async signInGitHub(): Promise<void> {
+    if (!GITHUB_AUTH_ENABLED) {
+      throw new Error("GitHub sign-in is disabled for this deployment");
+    }
+
+    const redirectTo =
+      `${window.location.pathname}${window.location.search}${window.location.hash}` ||
+      "/";
+
     const result = await this.unauthenticatedSignIn({
       provider: "github",
+      params: { redirectTo },
     });
     if (result?.redirect) {
       // Store the PKCE verifier for the callback

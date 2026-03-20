@@ -19,6 +19,9 @@ import "./AuthScreen.css";
 
 // GitHub SVG icon (simple mark)
 const GITHUB_ICON = `<svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`;
+const LEATHER_ICON_SRC = "/Leather-symbol-off-white.svg";
+const XVERSE_ICON_SRC = "/Xverse_idpfi8N7fU_0.png";
+const WALLETCONNECT_ICON_SRC = "/Walletconnect.png";
 const AUTO_RESUME_SESSION_FLAG = "VITE_AUTO_RESUME_SESSION";
 const DEFAULT_AUTH_BACKGROUND_YOUTUBE_URL = "https://www.youtube.com/watch?v=QSNwU1lDhqI";
 
@@ -222,12 +225,16 @@ export class AuthScreen {
     // -----------------------------------------------------------------------
     // GitHub OAuth
     // -----------------------------------------------------------------------
-    const divider1 = document.createElement("div");
-    divider1.className = "auth-divider";
-    divider1.textContent = "or";
-    card.appendChild(divider1);
+    const showGitHubAuth =
+      getAuthManager().isGitHubAuthEnabled() &&
+      !isLocalConvexUrl(import.meta.env.VITE_CONVEX_URL as string | undefined);
 
-    if (!isLocalConvexUrl(import.meta.env.VITE_CONVEX_URL as string | undefined)) {
+    if (showGitHubAuth) {
+      const divider1 = document.createElement("div");
+      divider1.className = "auth-divider";
+      divider1.textContent = "or";
+      card.appendChild(divider1);
+
       const ghBtn = document.createElement("button");
       ghBtn.className = "auth-btn github";
       ghBtn.innerHTML = `<span class="icon">${GITHUB_ICON}</span> Sign in with GitHub`;
@@ -364,6 +371,37 @@ export class AuthScreen {
     return button;
   }
 
+  private makeWalletIconButton(
+    label: string,
+    iconSrc: string,
+    iconAlt: string,
+    providerLabel?: string,
+  ) {
+    const button = document.createElement("button");
+    button.className = "auth-btn auth-wallet-icon-btn";
+    button.type = "button";
+    button.title = label;
+    button.setAttribute("aria-label", label);
+    button.dataset.walletLabel = label;
+    if (providerLabel) {
+      button.dataset.walletProvider = providerLabel;
+    }
+
+    const img = document.createElement("img");
+    img.className = "auth-wallet-icon";
+    img.src = iconSrc;
+    img.alt = iconAlt;
+    img.loading = "eager";
+    img.decoding = "async";
+
+    const sr = document.createElement("span");
+    sr.className = "sr-only";
+    sr.textContent = label;
+
+    button.append(img, sr);
+    return button;
+  }
+
   private renderWalletSection() {
     if (!this.walletHeadingEl || !this.walletHintEl || !this.walletAddressEl || !this.walletActionsEl) {
       return;
@@ -383,17 +421,32 @@ export class AuthScreen {
         ? `Current payer: ${providerLabel} • ${formatStacksAddress(address)}`
         : "No wallet connected yet.";
 
-      const xverseBtn = this.makeWalletButton("Connect Xverse");
+      const xverseBtn = this.makeWalletIconButton(
+        "Connect Xverse",
+        XVERSE_ICON_SRC,
+        "Xverse logo",
+        "Xverse",
+      );
       xverseBtn.addEventListener("click", () => {
         void this.connectWallet("XverseProviders.BitcoinProvider");
       });
 
-      const leatherBtn = this.makeWalletButton("Connect Leather");
+      const leatherBtn = this.makeWalletIconButton(
+        "Connect Leather",
+        LEATHER_ICON_SRC,
+        "Leather wallet logo",
+        "Leather",
+      );
       leatherBtn.addEventListener("click", () => {
         void this.connectWallet("LeatherProvider");
       });
 
-      const otherBtn = this.makeWalletButton("Other wallet");
+      const otherBtn = this.makeWalletIconButton(
+        "Other wallet",
+        WALLETCONNECT_ICON_SRC,
+        "WalletConnect logo",
+        "Other wallet",
+      );
       otherBtn.addEventListener("click", () => {
         void this.connectWallet(undefined, "Other wallet");
       });
@@ -439,20 +492,35 @@ export class AuthScreen {
       "Connect one testnet wallet now, or skip this and connect later when you actually need a paid x402 action.";
     this.walletAddressEl.textContent = "No wallet connected yet.";
 
-    const xverseBtn = this.makeWalletButton("Connect Xverse");
-    xverseBtn.addEventListener("click", () => {
-      void this.connectWallet("XverseProviders.BitcoinProvider");
-    });
+      const xverseBtn = this.makeWalletIconButton(
+        "Connect Xverse",
+        XVERSE_ICON_SRC,
+        "Xverse logo",
+        "Xverse",
+      );
+      xverseBtn.addEventListener("click", () => {
+        void this.connectWallet("XverseProviders.BitcoinProvider");
+      });
 
-    const leatherBtn = this.makeWalletButton("Connect Leather");
-    leatherBtn.addEventListener("click", () => {
-      void this.connectWallet("LeatherProvider");
-    });
+      const leatherBtn = this.makeWalletIconButton(
+        "Connect Leather",
+        LEATHER_ICON_SRC,
+        "Leather wallet logo",
+        "Leather",
+      );
+      leatherBtn.addEventListener("click", () => {
+        void this.connectWallet("LeatherProvider");
+      });
 
-    const otherBtn = this.makeWalletButton("Other wallet");
-    otherBtn.addEventListener("click", () => {
-      void this.connectWallet(undefined, "Other wallet");
-    });
+      const otherBtn = this.makeWalletIconButton(
+        "Other wallet",
+        WALLETCONNECT_ICON_SRC,
+        "WalletConnect logo",
+        "Other wallet",
+      );
+      otherBtn.addEventListener("click", () => {
+        void this.connectWallet(undefined, "Other wallet");
+      });
 
     this.walletActionsEl.append(leatherBtn, xverseBtn, otherBtn);
   }
@@ -481,12 +549,14 @@ export class AuthScreen {
     const activeButton =
       buttons.find((button) =>
         triggerLabel
-          ? button.textContent?.includes(triggerLabel)
-          : button.textContent?.includes(providerName),
+          ? button.dataset.walletLabel === triggerLabel
+          : button.dataset.walletProvider === providerName || button.dataset.walletLabel === providerName,
       ) ?? buttons[0];
-    const originalLabels = buttons.map((button) => button.textContent || "");
+    const originalLabels = buttons.map((button) => button.innerHTML);
     for (const button of buttons) button.disabled = true;
-    if (activeButton) activeButton.textContent = "Connecting...";
+    if (activeButton) {
+      activeButton.innerHTML = `<span class="auth-wallet-connecting">Connecting...</span>`;
+    }
     this.showStatus(
       providerId
         ? `Connecting ${providerName}...`
@@ -512,7 +582,7 @@ export class AuthScreen {
         error: err,
       });
       buttons.forEach((button, index) => {
-        button.textContent = originalLabels[index] || button.textContent || "";
+        button.innerHTML = originalLabels[index] || button.innerHTML;
       });
       const message =
         typeof err?.message === "string" && err.message.includes("Wallet connection timed out")

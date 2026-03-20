@@ -3,6 +3,7 @@ import { mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getRequestUserId } from "./lib/getRequestUserId";
 import { buildWorldEventRecord } from "./lib/worldEvents";
+import { requireAdminKey } from "./lib/requireAdminKey";
 
 const DEMO_MAP = "Cozy Cabin";
 const DEMO_SPRITE_DEF = "local-guide-npc";
@@ -481,9 +482,15 @@ function isPlaceholderCozyCabinMap(map: {
 export const ensureDemoNpc = mutation({
   args: {
     mapName: v.optional(v.string()),
+    adminKey: v.optional(v.string()),
   },
-  handler: async (ctx, { mapName }) => {
-    if (!isLocalDeployment()) {
+  handler: async (ctx, { mapName, adminKey }) => {
+    const allowRemoteBootstrap = Boolean(adminKey);
+    if (allowRemoteBootstrap) {
+      requireAdminKey(adminKey!);
+    }
+
+    if (!isLocalDeployment() && !allowRemoteBootstrap) {
       return { seeded: false, reason: "not-local" as const };
     }
 
