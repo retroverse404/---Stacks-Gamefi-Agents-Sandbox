@@ -230,15 +230,17 @@ New:     src/lib/x402.ts → makeUnsignedSTXTokenTransfer → Turnkey signRawPay
 Add to `services/x402-api/.env.local` and Render dashboard:
 
 ```bash
-# Turnkey parent org (already have these in finding-nakamoto)
-NEXT_PUBLIC_TURNKEY_ORGANIZATION_ID=2c83ce67-30e4-4e97-a00c-5941ed10b61c
-TURNKEY_API_PUBLIC_KEY=023ad954fd6dbcba3b38bdeb8721c967094c53d8b026680b57f92375d29ccb40c9
-TURNKEY_API_PRIVATE_KEY=0c63b78c98f2392fc2a2cae48c6b67cd6107e383a7d949ed3ec9fd2bc3bbc8ec
+# Turnkey parent org (store only in local/server env, never in repo docs)
+NEXT_PUBLIC_TURNKEY_ORGANIZATION_ID=your_turnkey_org_id
+TURNKEY_API_PUBLIC_KEY=your_turnkey_api_public_key
+TURNKEY_API_PRIVATE_KEY=your_turnkey_api_private_key
 
 # Delegated API keys (STILL NEED TO CREATE in Turnkey dashboard)
-TURNKEY_DELEGATED_API_PUBLIC_KEY=
-TURNKEY_DELEGATED_API_PRIVATE_KEY=
+TURNKEY_DELEGATED_API_PUBLIC_KEY=your_turnkey_delegated_api_public_key
+TURNKEY_DELEGATED_API_PRIVATE_KEY=your_turnkey_delegated_api_private_key
 ```
+
+Do not commit live Turnkey keys to this repo. Treat any key that has appeared in Git history, screenshots, chat logs, or shared docs as compromised and rotate it.
 
 ---
 
