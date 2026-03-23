@@ -1835,7 +1835,7 @@ export const ensureDemoNpc = mutation({
       valueClass: "utility",
       triggerType: "interact",
       freeActions: ["inspect", "read-titles"],
-      paidActions: ["unlock-lesson"],
+      paidActions: ["Unlock lesson"],
       premiumOfferKey: BOOKSHELF_OFFER_KEY,
       interactionPrompt: "Read shelf titles",
       interactionSummary: "You scan the shelf and note a cluster of Stacks, market, and lore volumes.",
@@ -1847,7 +1847,7 @@ export const ensureDemoNpc = mutation({
         tile: { x: 37, y: 10 },
         trigger: "interact",
         freeActions: ["inspect", "read-titles"],
-        paidActions: ["unlock-lesson"],
+        paidActions: ["Unlock lesson"],
         interactionPrompt: "Read shelf titles",
         interactionSummary: "You scan the shelf and note a cluster of Stacks, market, and lore volumes.",
         eventBindings: {

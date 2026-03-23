@@ -1748,7 +1748,7 @@ export class Game {
       marker.halo.scale.set(pulse);
       marker.halo.alpha = nearby ? 0.34 : 0.22;
       marker.gem.scale.set(nearby ? 1.08 : 1);
-      marker.label.text = nearby ? "[X] PREMIUM" : "PREMIUM";
+      marker.label.text = nearby ? `[X] ${object.label}` : object.label;
     }
   }
 
