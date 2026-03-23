@@ -14,13 +14,15 @@ const JWT_KEY = "__convexAuthJWT";
 const REFRESH_KEY = "__convexAuthRefreshToken";
 const VERIFIER_KEY = "__convexAuthOAuthVerifier";
 const githubAuthFlag = (import.meta as any).env.VITE_ENABLE_GITHUB_AUTH as string | undefined;
-const GITHUB_AUTH_ENABLED = githubAuthFlag !== "false";
+// Default OFF. Opt in by setting VITE_ENABLE_GITHUB_AUTH=true once the backend provider is configured.
+const GITHUB_AUTH_ENABLED = githubAuthFlag === "true";
 
 export class AuthManager {
   private client: ConvexClient;
   private token: string | null = null;
   private refreshToken: string | null = null;
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
+  private storageHandler: ((e: StorageEvent) => void) | null = null;
   private _onAuthChange: (() => void) | null = null;
 
   constructor(client: ConvexClient) {
@@ -36,6 +38,13 @@ export class AuthManager {
 
     // Start periodic token refresh (every 5 minutes)
     this.refreshTimer = setInterval(() => this.tryRefresh(), 5 * 60 * 1000);
+
+    // Listen for auth changes from other tabs/popups (GitHub popup flow)
+    this.storageHandler = (event: StorageEvent) => {
+      if (event.key !== JWT_KEY && event.key !== REFRESH_KEY) return;
+      this.reloadTokensFromStorage();
+    };
+    window.addEventListener("storage", this.storageHandler);
   }
 
   /** Whether the user has a stored auth token */
@@ -59,7 +68,10 @@ export class AuthManager {
   async validateSession(): Promise<boolean> {
     if (!this.token) return false;
     try {
-      const user = await this.client.query(api.admin.currentUser, {});
+      const url = (import.meta as any).env.VITE_CONVEX_URL as string;
+      const httpClient = new ConvexHttpClient(url);
+      httpClient.setAuth(this.token);
+      const user = await httpClient.query(api.admin.currentUser, {});
       if (user) return true;
     } catch {
       // Fall through to clear local token state
@@ -91,7 +103,7 @@ export class AuthManager {
         this.setTokens(result.tokens.token, result.tokens.refreshToken);
         // Clean up URL and verifier
         localStorage.removeItem(VERIFIER_KEY);
-        window.history.replaceState({}, "", window.location.pathname);
+        window.history.replaceState({}, "", "/");
         return true;
       }
     } catch (err) {
@@ -139,6 +151,22 @@ export class AuthManager {
     }
   }
 
+  /** Start GitHub OAuth flow but return the redirect URL so callers can open a popup. */
+  async getGitHubRedirect(): Promise<{ redirect: string; verifier?: string } | null> {
+    if (!GITHUB_AUTH_ENABLED) return null;
+    const redirectTo =
+      `${window.location.pathname}${window.location.search}${window.location.hash}` ||
+      "/";
+    const result = await this.unauthenticatedSignIn({
+      provider: "github",
+      params: { redirectTo },
+    });
+    if (result?.verifier) {
+      localStorage.setItem(VERIFIER_KEY, result.verifier);
+    }
+    return result?.redirect ? { redirect: result.redirect, verifier: result.verifier } : null;
+  }
+
   /** Sign out and clear all stored tokens */
   async signOut(): Promise<void> {
     try {
@@ -153,6 +181,10 @@ export class AuthManager {
     if (this.refreshTimer) {
       clearInterval(this.refreshTimer);
       this.refreshTimer = null;
+    }
+    if (this.storageHandler) {
+      window.removeEventListener("storage", this.storageHandler);
+      this.storageHandler = null;
     }
   }
 
@@ -206,6 +238,20 @@ export class AuthManager {
       async () => null,
       (isAuthenticated) => this._onAuthChange?.(),
     );
+  }
+
+  private reloadTokensFromStorage() {
+    const storedToken = localStorage.getItem(JWT_KEY);
+    const storedRefresh = localStorage.getItem(REFRESH_KEY);
+    if (storedToken && storedRefresh) {
+      this.token = storedToken;
+      this.refreshToken = storedRefresh;
+      this.client.setAuth(
+        async () => this.token ?? null,
+        () => this._onAuthChange?.(),
+      );
+      this._onAuthChange?.();
+    }
   }
 
   /** Try to refresh the token using the stored refresh token */

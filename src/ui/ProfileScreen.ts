@@ -2,7 +2,7 @@
  * ProfileScreen -- displayed on startup. Lists existing profiles,
  * allows creating new ones, deleting them, and viewing account info.
  */
-import { getConvexClient } from "../lib/convexClient.ts";
+import { getAuthManager, getConvexClient } from "../lib/convexClient.ts";
 import {
   connectStacksWallet,
   disconnectStacksWallet,
@@ -300,8 +300,24 @@ export class ProfileScreen {
     this.confirmOverlay.style.display = "none";
     this.el.appendChild(this.confirmOverlay);
 
-    this.loadProfiles();
-    this.subscribeToProfiles();
+    void this.initSession();
+  }
+
+  private async initSession() {
+    try {
+      const auth = getAuthManager();
+      const valid = auth.isAuthenticated() && (await auth.validateSession());
+      if (!valid) {
+        this.onSignOut?.();
+        return;
+      }
+
+      await this.loadProfiles();
+      this.subscribeToProfiles();
+    } catch (error) {
+      console.warn("Profile screen session init failed:", error);
+      this.onSignOut?.();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -318,6 +334,7 @@ export class ProfileScreen {
       })) as ProfileData[];
       this.renderList(mapped);
     } catch (err) {
+      if (await this.handleAuthError(err)) return;
       console.warn("Failed to load profiles:", err);
       this.renderList([]);
     }
@@ -506,10 +523,12 @@ export class ProfileScreen {
       const selected = refreshed
         ? ({ ...refreshed, role: (refreshed as any).role ?? "player" } as unknown as ProfileData)
         : ({ ...profile, mapName: CANONICAL_START_WORLD } as ProfileData);
+      await this.bindCachedWalletToProfile(selected);
       this.profilesUnsub?.();
       this.profilesUnsub = null;
       this.onSelect(selected);
     } catch (err: any) {
+      if (await this.handleAuthError(err)) return;
       console.warn("Failed to select profile:", err);
     }
   }
@@ -772,11 +791,52 @@ export class ProfileScreen {
       const profile = await convex.query(api.profiles.get, { id: profileId });
       if (profile) {
         const p = { ...profile, role: (profile as any).role ?? "player" } as unknown as ProfileData;
+        await this.bindCachedWalletToProfile(p);
         this.onSelect(p);
       }
     } catch (err: any) {
+      if (await this.handleAuthError(err)) return;
       this.showStatus(err.message || "Failed to create profile", true);
     }
+  }
+
+  private async bindCachedWalletToProfile(profile: ProfileData) {
+    const address = getCachedStacksAddress();
+    if (!address) return;
+
+    const convex = getConvexClient();
+    const providerId = getCachedStacksProviderId();
+
+    try {
+      await convex.mutation(api.wallets.bindPlayerWallet, {
+        profileId: profile._id as any,
+        network: "testnet",
+        address,
+        provider: providerId ?? undefined,
+        walletRole: "payer",
+        custodyType: "browser",
+      });
+    } catch (error) {
+      console.warn("Failed to bind cached wallet to profile:", error);
+    }
+  }
+
+  private async handleAuthError(err: unknown) {
+    const message =
+      err && typeof err === "object" && "message" in err ? String((err as any).message) : "";
+
+    if (!message.includes("Not authenticated")) return false;
+
+    this.showStatus("Local auth was reset. Please sign in again.", true);
+    try {
+      await getAuthManager().signOut();
+    } catch {
+      // Ignore sign-out failures; the goal is to clear stale local tokens.
+    }
+    this.profilesUnsub?.();
+    this.profilesUnsub = null;
+    window.setTimeout(() => this.onSignOut?.(), 250);
+    return true;
   }
 
   private showStatus(text: string, isError = false) {

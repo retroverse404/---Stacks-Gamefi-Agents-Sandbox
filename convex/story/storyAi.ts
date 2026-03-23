@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { action } from "../_generated/server";
-import { api } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 import { MAX_AGENT_LINE_CHARS, normalizeShortAgentLine } from "../lib/agentCopy";
 
 // Braintrust AI Proxy for LLM-assisted narrative generation
@@ -66,13 +66,6 @@ export const generateDialogue = action({
     const { apiKey, model, maxHistoryMessages, maxInputChars, maxOutputTokens } =
       getBraintrustConfig();
 
-    if (agentId) {
-      await ctx.runMutation((api as any)["agents/runtime"].registerAiCall, {
-        agentId,
-        reason: "generate-dialogue",
-      });
-    }
-
     const messages: any[] = [
       { role: "system", content: trimText(systemPrompt, maxInputChars * 2) },
       {
@@ -91,6 +84,26 @@ export const generateDialogue = action({
       ),
     );
     messages.push({ role: "user", content: trimText(userMessage, maxInputChars) });
+
+    const approximateInputChars = messages.reduce(
+      (sum, message) => sum + String(message.content ?? "").length,
+      0,
+    );
+
+    await ctx.runMutation((internal as any).runtimePolicy.registerAiSpend, {
+      surface: agentId ? `dialogue:${agentId}` : "dialogue",
+      agentId,
+      approximateInputChars,
+      maxOutputTokens,
+      autonomous: false,
+    });
+
+    if (agentId) {
+      await ctx.runMutation((api as any)["agents/runtime"].registerAiCall, {
+        agentId,
+        reason: "generate-dialogue",
+      });
+    }
 
     const response = await fetch(
       "https://api.braintrust.dev/v1/proxy/chat/completions",
@@ -130,6 +143,7 @@ export const expandNarrative = action({
     ),
   },
   handler: async (_ctx, { prompt, context, type }) => {
+    const ctx = _ctx;
     const { apiKey, model, maxInputChars, maxOutputTokens } = getBraintrustConfig();
 
     const systemPrompts: Record<string, string> = {
@@ -147,6 +161,18 @@ export const expandNarrative = action({
       ...(context ? [{ role: "user", content: `Context: ${trimText(context, maxInputChars)}` }] : []),
       { role: "user", content: trimText(prompt, maxInputChars) },
     ];
+
+    const approximateInputChars = messages.reduce(
+      (sum, message) => sum + String(message.content ?? "").length,
+      0,
+    );
+
+    await ctx.runMutation((internal as any).runtimePolicy.registerAiSpend, {
+      surface: `expand-narrative:${type}`,
+      approximateInputChars,
+      maxOutputTokens: Math.max(160, Math.min(maxOutputTokens * 2, 900)),
+      autonomous: false,
+    });
 
     const response = await fetch(
       "https://api.braintrust.dev/v1/proxy/chat/completions",

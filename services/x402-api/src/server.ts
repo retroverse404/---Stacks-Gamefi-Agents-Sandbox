@@ -24,6 +24,7 @@ const marketPremiumPrice = Number(process.env.MARKET_PREMIUM_PRICE_STX || "0.001
 const melPremiumPrice = Number(
   process.env.MEL_PREMIUM_PRICE_STX || guidePremiumPrice.toString(),
 );
+const sessionContinuationPrice = Number(process.env.SESSION_CONTINUATION_PRICE_STX || "10");
 const network = networkName === "mainnet" ? "mainnet" : "testnet";
 const marketNetworkName = (process.env.MARKET_NETWORK || networkName).toLowerCase();
 const marketNetwork = marketNetworkName === "testnet" ? "testnet" : "mainnet";
@@ -32,6 +33,7 @@ const marketServerAddress = process.env.MARKET_SERVER_ADDRESS || serverAddress;
 const guideServerAddress = process.env.GUIDE_SERVER_ADDRESS || serverAddress;
 const melServerAddress = process.env.MEL_SERVER_ADDRESS || serverAddress;
 const questsServerAddress = process.env.QUESTS_SERVER_ADDRESS || serverAddress;
+const sessionServerAddress = process.env.SESSION_SERVER_ADDRESS || serverAddress || guideServerAddress;
 const hostedServiceUrl = process.env.RENDER_EXTERNAL_URL || "";
 const resolvedFacilitatorUrl = facilitatorUrl || hostedServiceUrl || `http://127.0.0.1:${port}`;
 
@@ -72,6 +74,15 @@ const WAX_CYLINDER_PREMIUM_ACCESS: Omit<PremiumAccessGrantConfig, "payerPrincipa
   agentDisplayName: "Mel",
   agentInstanceName: "mel-curator",
   resourceId: "cozy-cabin-wax-cylinder-memory",
+};
+
+const SESSION_CONTINUATION_PREMIUM_ACCESS: Omit<
+  PremiumAccessGrantConfig,
+  "payerPrincipal" | "paymentTxid"
+> = {
+  agentDisplayName: "Stackshub",
+  agentInstanceName: "stackshub-session",
+  resourceId: "stackshub-session-continuation",
 };
 
 async function finalizePremiumAccess(
@@ -238,6 +249,19 @@ app.get("/api/premium/mel/wax-cylinder-memory/metadata", (_req, res) => {
     asset: "STX",
     priceStx: melPremiumPrice,
     resource: "/api/premium/mel/wax-cylinder-memory",
+    facilitatorUrl: resolvedFacilitatorUrl,
+    status: facilitatorUrl ? "external-facilitator" : "local-facilitator-fallback",
+  });
+});
+
+app.get("/api/premium/session/continue/metadata", (_req, res) => {
+  res.json({
+    name: "Stackshub live session continuation",
+    description: "Continue exploring the sandbox after the free preview window ends.",
+    network: networkName,
+    asset: "STX",
+    priceStx: sessionContinuationPrice,
+    resource: "/api/premium/session/continue",
     facilitatorUrl: resolvedFacilitatorUrl,
     status: facilitatorUrl ? "external-facilitator" : "local-facilitator-fallback",
   });
@@ -587,6 +611,52 @@ if (!marketServerAddress) {
           network: marketNetworkName,
           deliveredAt: Date.now(),
         });
+      }
+    },
+  );
+}
+
+if (!sessionServerAddress) {
+  app.get("/api/premium/session/continue", (_req, res) => {
+    res.status(503).json({
+      error: "x402_api_not_configured",
+      message:
+        "SESSION_SERVER_ADDRESS is not set. Configure the x402 API before enabling paid session continuation.",
+    });
+  });
+} else {
+  app.get(
+    "/api/premium/session/continue",
+    paymentMiddleware({
+      amount: STXtoMicroSTX(sessionContinuationPrice),
+      payTo: sessionServerAddress,
+      network,
+      facilitatorUrl: resolvedFacilitatorUrl,
+      description: "Stackshub live session continuation",
+      tokenType: "STX",
+    }),
+    async (req, res) => {
+      try {
+        const premiumAccess = await finalizePremiumAccess(
+          req,
+          SESSION_CONTINUATION_PREMIUM_ACCESS,
+          Number(STXtoMicroSTX(sessionContinuationPrice)),
+        );
+        res.json({
+          title: "Stackshub live session continuation",
+          classification: "premium",
+          delivery: "session-extension",
+          summary:
+            "The live sandbox session has been extended. Agents, wallet surfaces, and DeFi interactions remain open.",
+          extensionMinutes: Number(process.env.RUNTIME_PAID_SESSION_MINUTES || "5"),
+          network: networkName,
+          asset: "STX",
+          priceStx: sessionContinuationPrice,
+          deliveredAt: Date.now(),
+          ...premiumAccess,
+        });
+      } catch (error) {
+        sendGrantAccessFailure(res, error);
       }
     },
   );

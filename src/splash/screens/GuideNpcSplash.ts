@@ -8,6 +8,7 @@ import {
   GUIDE_BTC_VERIFIED_CONTEXT,
   type GuideTopic,
 } from "../../story/content/stacksGuideContext.ts";
+import { getLocalAiFallbackLine, isMissingBraintrustConfig } from "../../lib/aiFallback.ts";
 import {
   formatStacksProvider,
   getCachedStacksAddress,
@@ -684,8 +685,15 @@ export function createGuideNpcSplash(props: GuideNpcSplashProps): SplashScreen {
       status.textContent = liveContext ? "Live context." : "Authored notes.";
     } catch (error: any) {
       answer.classList.remove("is-loading");
-      answer.textContent = "The AI briefing failed. The backend path may be offline.";
-      status.textContent = error?.message ?? "AI request failed";
+      if (isMissingBraintrustConfig(error)) {
+        const fallback = topic.fallbackAnswer.trim();
+        answer.textContent = fallback;
+        topicResponseCache.set(topic.id, fallback);
+        status.textContent = getLocalAiFallbackLine("guide.btc");
+      } else {
+        answer.textContent = "The AI briefing failed. The backend path may be offline.";
+        status.textContent = "AI request failed";
+      }
     } finally {
       setPending(false);
     }

@@ -90,6 +90,19 @@ Optional based on your auth UX:
   - defaults to enabled in hosted builds
   - set to `false` only if you explicitly want to hide the GitHub sign-in button
 
+This repo now includes [`vercel.json`](vercel.json) with:
+
+- `buildCommand: npm run build:hosted`
+- `outputDirectory: dist`
+
+`build:hosted` fails fast if:
+
+- `VITE_CONVEX_URL` is missing
+- `VITE_X402_API_URL` is missing
+- either URL still points to `localhost` / `127.0.0.1`
+
+That prevents Vercel from silently deploying a frontend wired to the wrong backend.
+
 ## Convex backend
 
 Set in each Convex deployment:
@@ -102,6 +115,24 @@ Set in each Convex deployment:
 - `CONVEX_SITE_URL` (used by auth config/JWKS domain)
 
 Important: each deployment (preview/prod) should have its own values where appropriate.
+
+### Recommended low-burn hosted demo policy
+
+For preview or judge-mode hosted iteration, keep the runtime conservative:
+
+- `RUNTIME_FREE_SESSION_MINUTES=3`
+- `MAX_CONCURRENT_PLAYERS=2`
+- `MAX_GUEST_VIEWERS=1`
+- `AI_MAX_CALLS_PER_WINDOW=40`
+- `AI_MAX_AUTONOMOUS_CALLS_PER_WINDOW=12`
+- `AI_MAX_RESERVED_OUTPUT_TOKENS_PER_WINDOW=12000`
+
+Why:
+
+- limits surprise Convex bandwidth and function churn
+- caps Braintrust spend
+- keeps the hosted link alive for judges without running an always-open sandbox
+- preserves local development as the main high-iteration mode
 
 ## x402 host
 
@@ -116,6 +147,7 @@ Important:
 
 - do not put signer keys in Vercel
 - keep private keys only on the x402 host
+- use separate receiver addresses where possible (for example session continuation vs guide/market/mel)
 
 ---
 

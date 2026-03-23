@@ -1,6 +1,7 @@
 import "./QuestsNpcSplash.css";
 import { getConvexClient } from "../../lib/convexClient.ts";
 import { api } from "../../../convex/_generated/api";
+import { getLocalAiFallbackLine, isMissingBraintrustConfig } from "../../lib/aiFallback.ts";
 
 const QUESTS_SYSTEM_PROMPT =
   "You are quests.btc, a Stacks ecosystem agent who surfaces grants, bounties, and community quests. " +
@@ -226,10 +227,9 @@ export function createQuestsNpcSplash(props: QuestsNpcSplashProps): SplashScreen
           ? text.trim()
           : "No response available right now.";
     } catch (err: any) {
-      askResponse.textContent =
-        typeof err?.message === "string" && err.message.trim().length > 0
-          ? err.message.trim()
-          : "The quests.btc AI path is unavailable right now.";
+      askResponse.textContent = isMissingBraintrustConfig(err)
+        ? getLocalAiFallbackLine("quests.btc")
+        : "The quests.btc AI path is unavailable right now.";
       console.warn("[QuestsNpcSplash] AI ask failed", err);
     } finally {
       askResponse.classList.remove("is-loading");

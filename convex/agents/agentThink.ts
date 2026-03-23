@@ -435,13 +435,6 @@ export const agentReactAction = internalAction({
     let apiKey: string;
     try { apiKey = getBraintrustKey(); } catch { return; }
 
-    try {
-      await ctx.runMutation((internal as any).agents.runtime.registerAiCall, {
-        agentId: reactorAgentId,
-        reason: "agent-reaction",
-      });
-    } catch { return; } // cooling down
-
     const systemPrompt = SYSTEM_PROMPTS[reactorRoleKey] ?? SYSTEM_PROMPTS.merchant;
     const model = ROLE_MODEL[reactorRoleKey] ?? "gemini-2.5-flash";
 
@@ -449,6 +442,25 @@ export const agentReactAction = internalAction({
       `${triggerAgentName} (${triggerRoleKey}) just said: "${triggerThought}"\n\n` +
       `React with one brief first-person response — as yourself, in character. ` +
       `Reference what they said. One sentence under ${MAX_AGENT_LINE_CHARS} characters.`;
+
+    try {
+      await ctx.runMutation((internal as any).runtimePolicy.registerAiSpend, {
+        surface: `agent-reaction:${reactorRoleKey}`,
+        agentId: reactorAgentId,
+        approximateInputChars: systemPrompt.length + userMessage.length,
+        maxOutputTokens: 100,
+        autonomous: true,
+      });
+    } catch {
+      return;
+    }
+
+    try {
+      await ctx.runMutation((internal as any).agents.runtime.registerAiCall, {
+        agentId: reactorAgentId,
+        reason: "agent-reaction",
+      });
+    } catch { return; } // cooling down
 
     const thought = normalizeShortAgentLine(await callBraintrust(apiKey, model, [
       { role: "system", content: systemPrompt },
@@ -484,13 +496,8 @@ export const agentThinkAction = internalAction({
     let apiKey: string;
     try { apiKey = getBraintrustKey(); } catch { return; }
 
-    // Budget guard
-    try {
-      await ctx.runMutation((internal as any).agents.runtime.registerAiCall, {
-        agentId,
-        reason: "autonomous-think",
-      });
-    } catch { return; }
+    const activeViewer = await ctx.runQuery((internal as any).runtimePolicy.hasActiveViewerQuery, {});
+    if (!activeViewer) return;
 
     // Gather context in parallel
     const [recentEvents, memory, cast, knowledgeFacts] = await Promise.all([
@@ -577,6 +584,26 @@ export const agentThinkAction = internalAction({
 
     const model = ROLE_MODEL[roleKey] ?? "gpt-4.1-mini";
     const systemPrompt = SYSTEM_PROMPTS[roleKey] ?? SYSTEM_PROMPTS.merchant;
+    const composedPrompt = contextParts.join("\n\n");
+
+    try {
+      await ctx.runMutation((internal as any).runtimePolicy.registerAiSpend, {
+        surface: `agent-think:${roleKey}`,
+        agentId,
+        approximateInputChars: systemPrompt.length + composedPrompt.length + 160,
+        maxOutputTokens: 120,
+        autonomous: true,
+      });
+    } catch {
+      return;
+    }
+
+    try {
+      await ctx.runMutation((internal as any).agents.runtime.registerAiCall, {
+        agentId,
+        reason: "autonomous-think",
+      });
+    } catch { return; }
 
     const thought = await callBraintrust(
       apiKey,
@@ -589,7 +616,7 @@ export const agentThinkAction = internalAction({
             `Return exactly one sentence under ${MAX_AGENT_LINE_CHARS} characters. ` +
             "Stay in character and keep the line concise.",
         },
-        { role: "user", content: contextParts.join("\n\n") },
+        { role: "user", content: composedPrompt },
       ],
       120,
     );

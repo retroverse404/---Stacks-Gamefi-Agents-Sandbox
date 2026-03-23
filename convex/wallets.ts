@@ -1,5 +1,37 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { buildWorldEventRecord } from "./lib/worldEvents";
+import { getRequestUserId } from "./lib/getRequestUserId";
+
+function normalizeWalletProvider(provider: string | undefined) {
+  if (!provider) return undefined;
+
+  switch (provider) {
+    case "LeatherProvider":
+      return "leather";
+    case "XverseProviders.BitcoinProvider":
+      return "xverse";
+    case "AsignaProvider":
+      return "asigna";
+    case "FordefiProviders.UtxoProvider":
+      return "fordefi";
+    default:
+      return provider.trim().toLowerCase() || undefined;
+  }
+}
+
+async function requireOwnedProfile(ctx: any, profileId: any) {
+  const userId = await getRequestUserId(ctx);
+  if (!userId) throw new Error("Not authenticated");
+
+  const profile = await ctx.db.get(profileId);
+  if (!profile) throw new Error("Profile not found");
+  if (profile.userId !== userId) {
+    throw new Error("Cannot bind a wallet to another user's profile");
+  }
+
+  return profile;
+}
 
 export const listWalletIdentities = query({
   args: {
@@ -94,6 +126,153 @@ export const upsertWalletIdentity = mutation({
 
     const id = await ctx.db.insert("walletIdentities", payload);
     return await ctx.db.get(id);
+  },
+});
+
+export const bindPlayerWallet = mutation({
+  args: {
+    profileId: v.id("profiles"),
+    network: v.string(),
+    address: v.string(),
+    provider: v.optional(v.string()),
+    walletRole: v.optional(v.string()),
+    custodyType: v.optional(v.string()),
+    bnsName: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const profile = await requireOwnedProfile(ctx, args.profileId);
+    const now = Date.now();
+    const walletRole = args.walletRole ?? "payer";
+    const provider = normalizeWalletProvider(args.provider);
+    const walletId = `player:${args.profileId}:${walletRole}:${args.network}`;
+
+    const existingForProfile = await ctx.db
+      .query("walletIdentities")
+      .withIndex("by_owner", (q) => q.eq("ownerType", "player").eq("ownerId", String(args.profileId)))
+      .collect();
+
+    for (const row of existingForProfile) {
+      if (row.network !== args.network) continue;
+      if (row.walletRole !== walletRole) continue;
+      if (row.walletId === walletId) continue;
+      if (row.status !== "disabled") {
+        await ctx.db.patch(row._id, {
+          status: "disabled",
+          updatedAt: now,
+        });
+      }
+    }
+
+    const existingByAddress = await ctx.db
+      .query("walletIdentities")
+      .withIndex("by_network_address", (q) => q.eq("network", args.network).eq("address", args.address))
+      .first();
+
+    if (
+      existingByAddress &&
+      existingByAddress.ownerType === "player" &&
+      existingByAddress.ownerId !== String(args.profileId) &&
+      existingByAddress.walletRole === walletRole &&
+      existingByAddress.status === "active"
+    ) {
+      throw new Error("This wallet is already linked to another player profile.");
+    }
+
+    const payload = {
+      walletId,
+      network: args.network,
+      address: args.address,
+      bnsName: args.bnsName,
+      ownerType: "player",
+      ownerId: String(args.profileId),
+      walletRole,
+      provider,
+      custodyType: args.custodyType ?? "browser",
+      status: "active",
+      lineageSource: "profile-wallet-bind",
+      lineageRef: String(args.profileId),
+      metadataJson: JSON.stringify({
+        profileName: profile.name,
+        mapName: profile.mapName ?? null,
+        boundAt: now,
+      }),
+      updatedAt: now,
+    };
+
+    let walletDoc;
+    if (existingByAddress) {
+      await ctx.db.patch(existingByAddress._id, payload);
+      walletDoc = await ctx.db.get(existingByAddress._id);
+    } else {
+      const existingByWalletId = await ctx.db
+        .query("walletIdentities")
+        .withIndex("by_walletId", (q) => q.eq("walletId", walletId))
+        .first();
+
+      if (existingByWalletId) {
+        await ctx.db.patch(existingByWalletId._id, payload);
+        walletDoc = await ctx.db.get(existingByWalletId._id);
+      } else {
+        const id = await ctx.db.insert("walletIdentities", payload);
+        walletDoc = await ctx.db.get(id);
+      }
+    }
+
+    const factKey = `wallet-binding:${args.network}`;
+    const existingFact = await ctx.db
+      .query("worldFacts")
+      .withIndex("by_scope_subject_factKey", (q) =>
+        q.eq("scope", "player").eq("subjectId", String(args.profileId)).eq("factKey", factKey),
+      )
+      .first();
+
+    const factPayload = {
+      mapName: profile.mapName,
+      factKey,
+      factType: "status",
+      valueJson: JSON.stringify({
+        profileId: String(args.profileId),
+        profileName: profile.name,
+        network: args.network,
+        address: args.address,
+        provider: provider ?? null,
+        walletRole,
+        status: "active",
+        updatedAt: now,
+      }),
+      scope: "player",
+      subjectId: String(args.profileId),
+      source: "wallets.bindPlayerWallet",
+      updatedAt: now,
+    };
+
+    if (existingFact) {
+      await ctx.db.patch(existingFact._id, factPayload);
+    } else {
+      await ctx.db.insert("worldFacts", factPayload);
+    }
+
+    await ctx.db.insert(
+      "worldEvents",
+      buildWorldEventRecord({
+        mapName: profile.mapName,
+        eventType: "player-wallet-linked",
+        sourceType: "wallet",
+        sourceId: args.address,
+        actorId: profile.name,
+        targetId: args.address,
+        summary: `${profile.name} linked a ${provider ?? "Stacks"} wallet for paid actions.`,
+        payloadJson: JSON.stringify({
+          profileId: String(args.profileId),
+          network: args.network,
+          address: args.address,
+          provider: provider ?? null,
+          walletRole,
+        }),
+      }),
+    );
+
+    return walletDoc;
   },
 });
 

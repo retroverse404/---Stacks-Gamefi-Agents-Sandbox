@@ -4,7 +4,13 @@
  *       AuthScreen → Game (guest mode — read-only, no auth)
  */
 import type { ConvexClient } from "convex/browser";
-import { clearGateUnlocked, getGateRemainingMs, isGateEnabled, isGateUnlocked } from "./lib/gateAccess.ts";
+import {
+  clearGateUnlocked,
+  getGateExtendedEventName,
+  getGateRemainingMs,
+  isGateEnabled,
+  isGateUnlocked,
+} from "./lib/gateAccess.ts";
 import { AuthScreen } from "./ui/AuthScreen.ts";
 import { GateScreen } from "./ui/GateScreen.ts";
 import { ProfileScreen } from "./ui/ProfileScreen.ts";
@@ -27,13 +33,19 @@ export class App {
   private gameShell: GameShell | null = null;
   private splashHost: SplashHost | null = null;
   private gateSessionTimer: ReturnType<typeof setTimeout> | null = null;
+  private gateExtendedListener: (() => void) | null = null;
 
   constructor(root: HTMLElement, convex: ConvexClient) {
     this.root = root;
     this.convex = convex;
+    if (typeof window !== "undefined") {
+      this.gateExtendedListener = () => this.startGateSessionMonitor();
+      window.addEventListener(getGateExtendedEventName(), this.gateExtendedListener);
+    }
   }
 
   async start() {
+    this.normalizeEntryUrl();
     if (this.shouldStartLocalDev()) {
       await this.startLocalDev();
       return;
@@ -158,6 +170,10 @@ export class App {
 
   destroy() {
     this.stopGateSessionMonitor();
+    if (typeof window !== "undefined" && this.gateExtendedListener) {
+      window.removeEventListener(getGateExtendedEventName(), this.gateExtendedListener);
+      this.gateExtendedListener = null;
+    }
     this.clear();
   }
 
@@ -197,6 +213,20 @@ export class App {
 
   private shouldStartLocalDev() {
     return this.isLocalDevAutoAuthEnabled() && !this.isLocalDevSignedOut();
+  }
+
+  private normalizeEntryUrl() {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("code")) return;
+
+    const { pathname, search, hash } = window.location;
+    if (pathname === "/" || pathname === "/index.html" || pathname === "/sprited.html") {
+      return;
+    }
+
+    window.history.replaceState({}, "", `/${search}${hash}`);
   }
 
   private async startLocalDev() {

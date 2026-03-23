@@ -8,6 +8,7 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { hasActiveViewer as hasAnyActiveViewer } from "./runtimePolicy";
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -16,7 +17,6 @@ const TICK_MS = 500; // server tick interval (ms) — faster updates keep agents
 const IDLE_MIN_MS = 1200; // minimum idle pause before next wander
 const IDLE_MAX_MS = 3200; // maximum idle pause
 const STALE_THRESHOLD_MS = TICK_MS * 4; // if no tick in this long, loop is dead
-const GUEST_HEARTBEAT_STALE_MS = 10_000;
 const TRADE_DISTANCE_PX = 96;
 const TRADE_COOLDOWN_MS = 12000;
 const TRADE_PRICE = 2;
@@ -118,8 +118,6 @@ const COZY_CABIN_PASSAGE_CLEAR_TILES: ReadonlyArray<readonly [number, number]> =
   ...Array.from({ length: 10 }, (_, offset) => [67, 17 + offset] as [number, number]),
   ...Array.from({ length: 10 }, (_, offset) => [68, 17 + offset] as [number, number]),
 ];
-const GUEST_HEARTBEAT_FACT_KEY = "guest-viewer-heartbeat";
-
 // ---------------------------------------------------------------------------
 // Queries
 // ---------------------------------------------------------------------------
@@ -266,6 +264,12 @@ function roleIntent(roleKey?: string, hasDesiredItem?: boolean) {
         currentIntent: "curating-opportunities",
         intentDetail: "checking the quest post and opportunity board for new work",
         mood: "focused",
+      };
+    case "curator":
+      return {
+        currentIntent: "curating-signal",
+        intentDetail: "circling the curation desk and collecting high-signal fragments",
+        mood: "attentive",
       };
     default:
       return {
@@ -440,14 +444,24 @@ function chooseSurfacePatrolTarget(
     candidates,
   );
 
-  const viable = shuffledCandidates.filter(
+  const movementCandidates = shuffledCandidates.filter(
+    (candidate) => candidate.distFromNpc >= Math.max(24, POST_IDLE_RADIUS_PX * 0.5),
+  );
+  const viable = movementCandidates.filter(
     (candidate) =>
       candidate.isReachable &&
       candidate.distFromNpc >= MIN_SURFACE_PATROL_DIST &&
       candidate.distFromCurrentTarget >= POST_IDLE_RADIUS_PX,
   );
-  const reachable = shuffledCandidates.filter((candidate) => candidate.isReachable);
-  const pool = viable.length > 0 ? viable : reachable.length > 0 ? reachable : shuffledCandidates;
+  const reachableMoving = movementCandidates.filter((candidate) => candidate.isReachable);
+  const pool =
+    viable.length > 0
+      ? viable
+      : reachableMoving.length > 0
+        ? reachableMoving
+        : movementCandidates.length > 0
+          ? movementCandidates
+          : shuffledCandidates;
 
   for (const candidate of pool) {
     if (
@@ -528,17 +542,6 @@ function hasRecentNpcLoopActivity(
         state.idleUntil != null
       ),
   );
-}
-
-async function hasActiveViewer(ctx: any) {
-  const anyPresence = await ctx.db.query("presence").first();
-  if (anyPresence) return true;
-
-  const heartbeat = await ctx.db
-    .query("worldFacts")
-    .withIndex("by_factKey", (q: any) => q.eq("factKey", GUEST_HEARTBEAT_FACT_KEY))
-    .first();
-  return (heartbeat?.updatedAt ?? 0) > Date.now() - GUEST_HEARTBEAT_STALE_MS;
 }
 
 function parseCollisionMask(raw: string | undefined) {
@@ -782,7 +785,7 @@ export const tick = internalMutation({
   handler: async (ctx) => {
     // Stop the loop when no players are online — avoids burning DB bandwidth.
     // Authenticated presence or a recent guest heartbeat can keep it alive.
-    if (!(await hasActiveViewer(ctx))) return;
+    if (!(await hasAnyActiveViewer(ctx))) return;
 
     const allNpcs = await ctx.db.query("npcState").collect();
     if (allNpcs.length === 0) return; // nothing to do, loop stops naturally
@@ -1442,7 +1445,7 @@ export const ensureLoop = mutation({
     const anyNpc = await ctx.db.query("npcState").first();
     if (!anyNpc) return;
 
-    if (!(await hasActiveViewer(ctx))) {
+    if (!(await hasAnyActiveViewer(ctx))) {
       return;
     }
 

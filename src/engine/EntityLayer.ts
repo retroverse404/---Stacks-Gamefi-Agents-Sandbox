@@ -381,12 +381,55 @@ export class EntityLayer {
       activeIds.add(npcId);
 
       const existing = this.npcs.find((n) => n.id === npcId);
+      const def = defsMap.get(s.spriteDefName);
 
       if (existing) {
         // Update position via server-driven interpolation
         if (existing.serverDriven) {
           existing.setServerPosition(s.x, s.y, s.vx, s.vy, s.direction);
         }
+
+        const displayName =
+          s.npcProfile?.displayName || s.instanceName || existing.name;
+        const greeting = this.buildNpcGreeting(displayName, def?.npcGreeting, s.npcProfile);
+        const loreText = this.buildNpcLore(s.npcProfile, s.currentIntent, s.intentDetail);
+        const tradeText = this.buildNpcTradeStatus(s.npcProfile, s.currentIntent);
+
+        existing.updateSemanticPresentation({
+          name: displayName,
+          dialogue: [
+            {
+              id: "greet",
+              text: greeting,
+              responses: [
+                { text: "Nice to meet you!", nextId: "bye" },
+                { text: "Tell me more about this place.", nextId: "lore" },
+                { text: "What are you up to?", nextId: "trade" },
+                { text: "See you around.", nextId: "bye" },
+              ],
+            },
+            {
+              id: "lore",
+              text: loreText,
+              responses: [
+                { text: "I'll keep exploring then.", nextId: "bye" },
+                { text: "Thanks for the hint.", nextId: "bye" },
+              ],
+            },
+            {
+              id: "trade",
+              text: tradeText,
+              responses: [
+                { text: "Interesting.", nextId: "bye" },
+                { text: "Tell me more about this place.", nextId: "lore" },
+              ],
+            },
+            {
+              id: "bye",
+              text: "Take care! Come chat anytime.",
+            },
+          ],
+        });
       } else {
         // Guard: skip if an NPC with the same instanceName already exists (duplicate npcState rows)
         if (s.instanceName && this.npcs.some((n) => n.name === s.instanceName)) {
@@ -395,7 +438,6 @@ export class EntityLayer {
         }
 
         // Create new NPC instance
-        const def = defsMap.get(s.spriteDefName);
         if (!def) continue;
 
         // Use instance name when available, otherwise fall back to sprite def name

@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { internalMutation, mutation, query } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { buildWorldEventRecord } from "../lib/worldEvents";
+import { hasActiveViewer } from "../runtimePolicy";
 
 // Epoch interval: default 3 minutes for a live world feel.
 // Override via AGENT_EPOCH_MS env var (e.g. 600000 for 10 min on low-budget deploys).
@@ -29,6 +30,26 @@ type RuntimeSnapshot = {
   intent: string;
   summary: string;
 };
+
+function shouldPreserveExistingState(existing: {
+  updatedAt?: number;
+  lastEpochAt?: number;
+  memorySummary?: string;
+  currentIntent?: string;
+  mood?: string;
+  state?: string;
+} | null | undefined): boolean {
+  if (!existing) return false;
+  const updatedAt = existing.updatedAt ?? 0;
+  const lastEpochAt = existing.lastEpochAt ?? 0;
+  if (updatedAt > lastEpochAt) return true;
+  return Boolean(
+    existing.memorySummary?.trim() ||
+      existing.currentIntent?.trim() ||
+      existing.mood?.trim() ||
+      existing.state?.trim(),
+  );
+}
 
 function buildDefaultBudgetPolicy(roleKey: string, permissionTier: string): AgentBudgetPolicy {
   if (roleKey === "market") {
@@ -197,6 +218,9 @@ export const ensureEpochLoop = mutation({
   },
   handler: async (ctx, { mapName }) => {
     const targetMap = mapName ?? "global";
+    if (!(await hasActiveViewer(ctx))) {
+      return { scheduled: false, reason: "no-active-viewers", mapName: targetMap };
+    }
     const factKey = `agent-runtime-loop:${targetMap}`;
     const existing = await ctx.db
       .query("worldFacts")
@@ -305,6 +329,13 @@ export const runEpoch = internalMutation({
   },
   handler: async (ctx, { mapName }) => {
     const now = Date.now();
+    if (!(await hasActiveViewer(ctx, now))) {
+      return {
+        ran: false,
+        reason: "no-active-viewers",
+        mapName: mapName ?? "global",
+      };
+    }
     const [registryRows, stateRows] = await Promise.all([
       ctx.db.query("agentRegistry").collect(),
       ctx.db.query("agentStates").collect(),
@@ -327,13 +358,14 @@ export const runEpoch = internalMutation({
         existing?.contextJson && existing.contextJson.trim().length > 0
           ? JSON.parse(existing.contextJson)
           : {};
+      const preserveExisting = shouldPreserveExistingState(existing);
       const payload = {
         agentId: row.agentId,
         agentType: row.agentType,
-        state: snapshot.state,
-        mood: snapshot.mood,
-        currentIntent: snapshot.intent,
-        memorySummary: snapshot.summary,
+        state: preserveExisting ? existing?.state ?? snapshot.state : snapshot.state,
+        mood: preserveExisting ? existing?.mood ?? snapshot.mood : snapshot.mood,
+        currentIntent: preserveExisting ? existing?.currentIntent ?? snapshot.intent : snapshot.intent,
+        memorySummary: preserveExisting ? existing?.memorySummary ?? snapshot.summary : snapshot.summary,
         contextJson: JSON.stringify({
           ...context,
           roleKey: row.roleKey,

@@ -22,7 +22,12 @@ export function createIntroSplash(props: IntroSplashProps): SplashScreen {
   prompt.className = "intro-prompt";
   prompt.textContent = "Click anywhere to begin";
 
-  el.append(title, tagline, prompt);
+  const disclaimer = document.createElement("p");
+  disclaimer.className = "intro-disclaimer";
+  disclaimer.textContent =
+    "* Educational R&D preview only. Not financial, investment, or trading advice.";
+
+  el.append(title, tagline, prompt, disclaimer);
   el.addEventListener("click", () => props.onClose());
 
   return {

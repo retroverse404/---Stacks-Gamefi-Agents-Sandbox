@@ -148,6 +148,12 @@ export class AuthScreen {
     support.innerHTML = "A sandbox for simulated worlds,<br>AI agents, wallets and transactions.";
     brandBlock.appendChild(support);
 
+    const disclaimer = document.createElement("div");
+    disclaimer.className = "auth-disclaimer";
+    disclaimer.textContent =
+      "* Educational R&D preview. Not financial, investment, or speculative advice.";
+    brandBlock.appendChild(disclaimer);
+
     const card = document.createElement("div");
     card.className = "auth-card";
 
@@ -252,9 +258,8 @@ export class AuthScreen {
     // -----------------------------------------------------------------------
     // GitHub OAuth
     // -----------------------------------------------------------------------
-    const showGitHubAuth =
-      getAuthManager().isGitHubAuthEnabled() &&
-      !isLocalConvexUrl(import.meta.env.VITE_CONVEX_URL as string | undefined);
+    const githubEnabled = getAuthManager().isGitHubAuthEnabled();
+    const showGitHubAuth = true; // always render the block so users know the option exists
 
     if (showGitHubAuth) {
       const divider1 = document.createElement("div");
@@ -265,8 +270,16 @@ export class AuthScreen {
       const ghBtn = document.createElement("button");
       ghBtn.className = "auth-btn github";
       ghBtn.innerHTML = `<span class="icon">${GITHUB_ICON}</span> Sign in with GitHub`;
+      ghBtn.disabled = !githubEnabled;
       ghBtn.addEventListener("click", () => this.handleGitHub(ghBtn));
       card.appendChild(ghBtn);
+
+      if (!githubEnabled) {
+        const ghNote = document.createElement("div");
+        ghNote.className = "auth-note";
+        ghNote.textContent = "GitHub sign-in is disabled in this build (backend provider not configured).";
+        card.appendChild(ghNote);
+      }
     }
 
     // -----------------------------------------------------------------------
@@ -367,8 +380,12 @@ export class AuthScreen {
     try {
       const auth = getAuthManager();
       await auth.signInPassword(email, password, flow);
+      this.showStatus("Verifying session...");
+      const valid = await this.waitForValidatedSession(auth);
+      if (!valid) {
+        throw new Error("Local auth did not finish syncing. Try Sign In once more.");
+      }
       this.showStatus("Signed in!");
-      await this.waitForAuth();
       this.done();
     } catch (err: any) {
       const msg = this.getAuthErrorMessage(err, flow);
@@ -379,14 +396,47 @@ export class AuthScreen {
   }
 
   private async handleGitHub(btn: HTMLButtonElement) {
+    const auth = getAuthManager();
+    this.showStatus("Opening GitHub...");
     btn.disabled = true;
-    this.showStatus("Redirecting to GitHub...");
+
+    const popupWidth = 640;
+    const popupHeight = 720;
+    const left = window.screenX + (window.outerWidth - popupWidth) / 2;
+    const top = window.screenY + (window.outerHeight - popupHeight) / 2;
+    const features = `popup=yes,toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=${popupWidth},height=${popupHeight},top=${top},left=${left}`;
+
     try {
-      const auth = getAuthManager();
-      await auth.signInGitHub();
-      // Browser will redirect — this code won't continue
+      const result = await auth.getGitHubRedirect();
+      if (!result?.redirect) {
+        throw new Error("GitHub sign-in is disabled or misconfigured");
+      }
+
+      const popup = window.open(result.redirect, "github-oauth", features);
+      if (!popup) {
+        throw new Error("Popup blocked. Please allow popups and retry.");
+      }
+
+      // Poll for auth becoming valid via storage sync
+      const poll = window.setInterval(async () => {
+        if (auth.isAuthenticated()) {
+          window.clearInterval(poll);
+          popup.close();
+          this.showStatus("Signed in!");
+          this.done();
+        }
+      }, 800);
+
+      // Safety timeout
+      window.setTimeout(() => {
+        window.clearInterval(poll);
+        if (!auth.isAuthenticated()) {
+          this.showStatus("GitHub sign-in did not complete. Please try again.", true);
+        }
+      }, 60_000);
     } catch (err: any) {
       this.showStatus(err.message || "Failed to start GitHub sign-in", true);
+    } finally {
       btn.disabled = false;
     }
   }
@@ -632,6 +682,15 @@ export class AuthScreen {
   /** Wait briefly for the ConvexClient to become authenticated */
   private waitForAuth(): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  private async waitForValidatedSession(auth = getAuthManager()) {
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      await this.waitForAuth();
+      const valid = await auth.validateSession();
+      if (valid) return true;
+    }
+    return false;
   }
 
   private done() {

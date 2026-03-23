@@ -2,8 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getRequestUserId } from "./lib/getRequestUserId";
-
-const GUEST_HEARTBEAT_FACT_KEY = "guest-viewer-heartbeat";
+import { assertPlayerCapacity, touchGuestViewer } from "./runtimePolicy";
 
 async function requireOwnedProfile(ctx: any, profileId: any) {
   const userId = await getRequestUserId(ctx);
@@ -34,6 +33,7 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     await requireOwnedProfile(ctx, args.profileId);
+    await assertPlayerCapacity(ctx, args.profileId);
     const existing = await ctx.db
       .query("presence")
       .withIndex("by_profile", (q) => q.eq("profileId", args.profileId))
@@ -83,33 +83,13 @@ export const listByMap = query({
 
 /** Lightweight heartbeat used by guest/demo viewers to keep NPCs ticking. */
 export const guestHeartbeat = mutation({
-  args: { mapName: v.optional(v.string()) },
-  handler: async (ctx, { mapName }) => {
+  args: {
+    mapName: v.optional(v.string()),
+    sessionId: v.string(),
+  },
+  handler: async (ctx, { mapName, sessionId }) => {
     const now = Date.now();
-    const existing = await ctx.db
-      .query("worldFacts")
-      .withIndex("by_factKey", (q) => q.eq("factKey", GUEST_HEARTBEAT_FACT_KEY))
-      .first();
-
-    const payload = {
-      mapName,
-      factKey: GUEST_HEARTBEAT_FACT_KEY,
-      factType: "status",
-      valueJson: JSON.stringify({
-        viewer: "guest",
-        mapName: mapName ?? null,
-        heartbeatAt: now,
-      }),
-      scope: "world",
-      source: "presence.guestHeartbeat",
-      updatedAt: now,
-    };
-
-    if (existing) {
-      await ctx.db.patch(existing._id, payload);
-    } else {
-      await ctx.db.insert("worldFacts", payload);
-    }
+    await touchGuestViewer(ctx, { sessionId, mapName, now });
 
     const anyNpc = await ctx.db.query("npcState").first();
     if (anyNpc) {
@@ -119,7 +99,7 @@ export const guestHeartbeat = mutation({
       }
     }
 
-    return { ok: true, heartbeatAt: now };
+    return { ok: true, heartbeatAt: now, sessionId };
   },
 });
 

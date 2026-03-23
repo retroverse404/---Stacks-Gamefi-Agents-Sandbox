@@ -8,6 +8,7 @@ import { InputManager } from "./InputManager.ts";
 import { AudioManager, type MusicPlaybackSnapshot } from "./AudioManager.ts";
 import { getConvexClient } from "../lib/convexClient.ts";
 import { isLocalConvexUrl } from "../lib/runtimeEnv.ts";
+import { getOrCreateRuntimeViewerId } from "../lib/runtimeSession.ts";
 import { X402RequestError, resolveX402Url, x402Fetch } from "../lib/x402.ts";
 import { api } from "../../convex/_generated/api";
 import type { AppMode, MapData, Portal, ProfileData, PresenceData } from "./types.ts";
@@ -318,6 +319,18 @@ export class Game {
     this.initialized = true;
 
     const isLocalDemo = isLocalConvexUrl(import.meta.env.VITE_CONVEX_URL as string | undefined);
+    const convex = getConvexClient();
+
+    try {
+      await convex.mutation((api as any).runtimePolicy.assertViewerAdmission, {
+        viewerType: this.isGuest ? "guest" : "player",
+        ...(this.isGuest
+          ? { sessionId: getOrCreateRuntimeViewerId() }
+          : { profileId: this.profile._id as Id<"profiles"> }),
+      });
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
 
     // Seed any static JSON maps that aren't yet in Convex.
     // Local guest mode is allowed to bootstrap demo data so the sandbox still works
@@ -326,7 +339,6 @@ export class Game {
       await this.seedStaticMaps();
       if (isLocalDemo) {
         try {
-          const convex = getConvexClient();
           await convex.mutation((api as any).localDev.ensureDemoNpc, { mapName: "Cozy Cabin" });
         } catch (e) {
           console.warn("Local demo NPC seed failed:", e);
@@ -1176,7 +1188,10 @@ export class Game {
     } else {
       const sendGuestHeartbeat = () => {
         convex
-          .mutation(api.presence.guestHeartbeat, { mapName: this.currentMapName })
+          .mutation(api.presence.guestHeartbeat, {
+            mapName: this.currentMapName,
+            sessionId: getOrCreateRuntimeViewerId(),
+          })
           .catch((err) => console.warn("Guest heartbeat failed:", err));
       };
       sendGuestHeartbeat();

@@ -3,6 +3,7 @@ import { getConvexClient } from "../../lib/convexClient.ts";
 import { api } from "../../../convex/_generated/api";
 import type { SplashScreen, SplashScreenCallbacks } from "../SplashTypes.ts";
 import { X402RequestError, resolveX402Url, x402Fetch } from "../../lib/x402.ts";
+import { getLocalAiFallbackLine, isMissingBraintrustConfig } from "../../lib/aiFallback.ts";
 
 export interface MarketNpcSplashProps extends SplashScreenCallbacks {
   npcName: string;
@@ -407,7 +408,9 @@ export function createMarketNpcSplash(props: MarketNpcSplashProps): SplashScreen
           : "No briefing available right now.";
     } catch (error: any) {
       briefAnswer.textContent =
-        error?.message ?? "The market briefing path is unavailable right now.";
+        isMissingBraintrustConfig(error)
+          ? getLocalAiFallbackLine("market.btc")
+          : "The market briefing path is unavailable right now.";
     } finally {
       setBriefPending(false);
     }

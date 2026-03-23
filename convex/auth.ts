@@ -25,6 +25,14 @@ function isLocalDeployment() {
 
 function isGitHubAuthEnabled() {
   const env = getRuntimeEnv();
+  console.log(
+    "[auth] github env",
+    JSON.stringify({
+      AUTH_ENABLE_GITHUB_AUTH: env.AUTH_ENABLE_GITHUB_AUTH,
+      AUTH_GITHUB_ID: env.AUTH_GITHUB_ID ? "<set>" : "<missing>",
+      AUTH_GITHUB_SECRET: env.AUTH_GITHUB_SECRET ? "<set>" : "<missing>",
+    }),
+  );
   return (
     env.AUTH_ENABLE_GITHUB_AUTH === "true" &&
     Boolean(env.AUTH_GITHUB_ID) &&

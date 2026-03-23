@@ -68,10 +68,10 @@ export interface DialogueLine {
  */
 export class NPC {
   readonly id: string;
-  readonly name: string;
+  name: string;
   readonly container: Container;
   readonly uiContainer: Container;
-  readonly dialogue: DialogueLine[];
+  dialogue: DialogueLine[];
   interactSoundUrl?: string;
   ambientSoundUrl?: string;
   ambientSoundRadius: number;
@@ -98,6 +98,7 @@ export class NPC {
   private speechBubbleText: Text | null = null;
   private speechExpiresAt = 0;
   private promptLabelText = "[E] Talk";
+  private speechLift = 0;
 
   // Server-driven mode (position set externally, no local AI)
   readonly serverDriven: boolean;
@@ -109,6 +110,8 @@ export class NPC {
   private serverTime = 0; // performance.now() when last server update arrived
   private lastServerDir: Direction = "down";
   private serverIsMoving = false;
+  private static readonly SERVER_MOVE_EPSILON_PX = 0.75;
+  private static readonly SERVER_SPEED_EPSILON = 4;
 
   // Wander AI state (only used when !serverDriven)
   private state: WanderState = "idle";
@@ -270,18 +273,41 @@ export class NPC {
    * Updates the interpolation target and direction.
    */
   setServerPosition(x: number, y: number, vx: number, vy: number, direction: string) {
+    const snapshotDx = x - this.serverX;
+    const snapshotDy = y - this.serverY;
+    const snapshotDistance = Math.hypot(snapshotDx, snapshotDy);
+    const distanceFromRender = Math.hypot(x - this.x, y - this.y);
+    const speed = Math.hypot(vx, vy);
+
     this.serverX = x;
     this.serverY = y;
     this.serverVX = vx;
     this.serverVY = vy;
     this.serverTime = performance.now();
-    this.serverIsMoving = vx !== 0 || vy !== 0;
+    this.serverIsMoving =
+      speed >= NPC.SERVER_SPEED_EPSILON &&
+      (snapshotDistance >= NPC.SERVER_MOVE_EPSILON_PX ||
+        distanceFromRender >= NPC.SERVER_MOVE_EPSILON_PX);
 
     // Update facing direction
     const dir = direction as Direction;
     if (dir !== this.lastServerDir) {
       this.lastServerDir = dir;
       this.setDirection(dir);
+    }
+  }
+
+  updateSemanticPresentation(config: {
+    name?: string;
+    dialogue?: DialogueLine[];
+  }) {
+    if (config.name && config.name !== this.name) {
+      this.name = config.name;
+      this.nameLabel.text = config.name;
+    }
+
+    if (config.dialogue && config.dialogue.length > 0) {
+      this.dialogue = config.dialogue;
     }
   }
 
@@ -384,12 +410,11 @@ export class NPC {
 
   /** Show/hide the NPC interaction prompt */
   setPromptVisible(visible: boolean, promptText?: string) {
-    if (this._showPrompt === visible) return;
     if (promptText) {
       this.setPromptText(promptText);
     }
     this._showPrompt = visible;
-    this.promptLabel.visible = visible;
+    this.promptLabel.visible = visible && !this.hasVisibleSpeech();
 
     // Face the player when they're close
     // (We'll handle this from EntityLayer with the player's relative position)
@@ -435,6 +460,7 @@ export class NPC {
     this.speechBubbleText!.x = 0;
     this.speechBubbleText!.y = -bubbleHeight / 2;
     this.speechBubble!.visible = true;
+    this.promptLabel.visible = false;
     this.speechExpiresAt = performance.now() + durationMs;
   }
 
@@ -443,6 +469,16 @@ export class NPC {
     if (this.speechBubble) {
       this.speechBubble.visible = false;
     }
+    this.promptLabel.visible = this._showPrompt;
+  }
+
+  hasVisibleSpeech() {
+    return Boolean(this.speechBubble?.visible);
+  }
+
+  setSpeechLift(lift: number) {
+    this.speechLift = Math.max(0, lift);
+    this.updateSpeechBubbleAnchor();
   }
 
   private ensureSpeechBubble() {
@@ -477,7 +513,7 @@ export class NPC {
   private updateSpeechBubbleAnchor() {
     if (!this.speechBubble) return;
     this.speechBubble.x = 0;
-    this.speechBubble.y = this.promptLabel.y - 18;
+    this.speechBubble.y = this.promptLabel.y - 18 - this.speechLift;
   }
 
   destroy() {

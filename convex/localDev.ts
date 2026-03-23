@@ -27,6 +27,7 @@ const MEL_MAINNET_EXECUTION_ADDRESS = "SP3YJTXH81SR6YPSG59RBJDBV5H2DD164Y1855ZK5
 const AIBTC_TEMPLATE_SOURCE = "aibtc-template";
 const BITFLOW_TUTORIAL_SOURCE = "bitflow-tutorial-1";
 const MARKET_OFFER_KEY = "market-btc-live-quote";
+const SESSION_CONTINUATION_OFFER_KEY = "stackshub-session-continuation";
 const BOOKSHELF_OFFER_KEY = "cozy-cabin-bookshelf-brief";
 const DUAL_STACKING_VIDEO_OFFER_KEY = "cozy-cabin-dual-stacking-video";
 const WAX_CYLINDER_OFFER_KEY = "cozy-cabin-wax-cylinder-memory";
@@ -701,17 +702,32 @@ export const ensureDemoNpc = mutation({
         npcSpeed: 22,
         npcWanderRadius: 80,
         npcDirDown: "row0",
-        npcDirUp: "row3",
+        npcDirUp: "row1",
         npcDirRight: "row2",
-        npcDirLeft: "row1",
+        npcDirLeft: "row3",
         npcGreeting: "I surface signal from the noise — projects, creators, and content worth your attention.",
         visibilityType: "system",
         createdByUser: userId ?? undefined,
         updatedAt: now,
       });
       melSpriteDef = await ctx.db.get(spriteDefId);
-    } else if (melSpriteDef.spriteSheetUrl !== "/assets/characters/villager2.json" || melSpriteDef.npcWanderRadius !== 80) {
-      await ctx.db.patch(melSpriteDef._id, { spriteSheetUrl: "/assets/characters/villager2.json", npcWanderRadius: 80, updatedAt: now });
+    } else if (
+      melSpriteDef.spriteSheetUrl !== "/assets/characters/villager2.json" ||
+      melSpriteDef.npcWanderRadius !== 80 ||
+      melSpriteDef.npcDirUp !== "row1" ||
+      melSpriteDef.npcDirLeft !== "row3" ||
+      melSpriteDef.npcDirRight !== "row2" ||
+      melSpriteDef.npcDirDown !== "row0"
+    ) {
+      await ctx.db.patch(melSpriteDef._id, {
+        spriteSheetUrl: "/assets/characters/villager2.json",
+        npcWanderRadius: 80,
+        npcDirDown: "row0",
+        npcDirUp: "row1",
+        npcDirRight: "row2",
+        npcDirLeft: "row3",
+        updatedAt: now,
+      });
     }
 
     let phonoSpriteDef = await ctx.db
@@ -765,7 +781,7 @@ export const ensureDemoNpc = mutation({
         name: DEMO_INSTANCE,
         spriteDefName: DEMO_SPRITE_DEF,
         mapName: targetMap,
-        displayName: "guide.btc",
+        displayName: "Guide",
         title: "Ecosystem Guide",
         backstory:
           "guide.btc is the first ecosystem-native guide in stacks2d, designed to orient new arrivals around Stacks, Bitcoin, and the future agent economy.",
@@ -786,7 +802,7 @@ export const ensureDemoNpc = mutation({
       await ctx.db.patch(npcProfile._id, {
         spriteDefName: DEMO_SPRITE_DEF,
         mapName: targetMap,
-        displayName: "guide.btc",
+        displayName: "Guide",
         title: "Ecosystem Guide",
         backstory:
           "guide.btc is the first ecosystem-native guide in stacks2d, designed to orient new arrivals around Stacks, Bitcoin, and the future agent economy.",
@@ -861,7 +877,7 @@ export const ensureDemoNpc = mutation({
         name: MARKET_INSTANCE,
         spriteDefName: MARKET_SPRITE_DEF,
         mapName: targetMap,
-        displayName: "market.btc",
+        displayName: "Market",
         title: "Market Analyst",
         backstory: "market.btc watches token movement and ecosystem price signals from a trading desk mindset.",
         personality: "measured, alert, analytical",
@@ -879,7 +895,7 @@ export const ensureDemoNpc = mutation({
       await ctx.db.patch(marketProfile._id, {
         spriteDefName: MARKET_SPRITE_DEF,
         mapName: targetMap,
-        displayName: "market.btc",
+        displayName: "Market",
         title: "Market Analyst",
         backstory: "market.btc watches token movement and ecosystem price signals from a trading desk mindset.",
         personality: "measured, alert, analytical",
@@ -903,7 +919,7 @@ export const ensureDemoNpc = mutation({
         name: QUESTS_INSTANCE,
         spriteDefName: QUESTS_SPRITE_DEF,
         mapName: targetMap,
-        displayName: "quests.btc",
+        displayName: "Quests",
         title: "Opportunity Keeper",
         backstory: "quests.btc collects bounties, grants, and quests into one place so arrivals know what work exists.",
         personality: "organized, practical, steady",
@@ -921,7 +937,7 @@ export const ensureDemoNpc = mutation({
       await ctx.db.patch(questsProfile._id, {
         spriteDefName: QUESTS_SPRITE_DEF,
         mapName: targetMap,
-        displayName: "quests.btc",
+        displayName: "Quests",
         title: "Opportunity Keeper",
         backstory: "quests.btc collects bounties, grants, and quests into one place so arrivals know what work exists.",
         personality: "organized, practical, steady",
@@ -1489,6 +1505,43 @@ export const ensureDemoNpc = mutation({
       await ctx.db.insert("premiumContentOffers", marketOfferPayload);
     }
 
+    const existingSessionContinuationOffer = await ctx.db
+      .query("premiumContentOffers")
+      .withIndex("by_offerKey", (q) => q.eq("offerKey", SESSION_CONTINUATION_OFFER_KEY))
+      .first();
+
+    const sessionContinuationOfferPayload = {
+      offerKey: SESSION_CONTINUATION_OFFER_KEY,
+      agentId: "stackshub-session",
+      title: "Continue live dungeon session",
+      description:
+        "After the free sandbox preview, pay to extend your live session and keep interacting with the world, agents, and premium surfaces.",
+      provider: "x402-stacks",
+      priceAsset: "STX",
+      priceAmount: "1",
+      network: "testnet",
+      endpointPath: "/api/premium/session/continue",
+      sourceType: "service",
+      deliveryType: "session-extension",
+      resourceId: SESSION_CONTINUATION_OFFER_KEY,
+      receiverAddress: GUIDE_TESTNET_EXECUTION_ADDRESS,
+      mainnetExecutionAddress: GUIDE_MAINNET_EXECUTION_ADDRESS,
+      status: "active",
+      metadataJson: JSON.stringify({
+        delivery: "session-extension",
+        extensionMinutes: 5,
+        notes:
+          "Judge-mode paywall for extending a live sandbox session after the free preview window.",
+      }),
+      updatedAt: now,
+    };
+
+    if (existingSessionContinuationOffer) {
+      await ctx.db.patch(existingSessionContinuationOffer._id, sessionContinuationOfferPayload);
+    } else {
+      await ctx.db.insert("premiumContentOffers", sessionContinuationOfferPayload);
+    }
+
     await upsertZone(ctx, {
       mapName: targetMap,
       zoneKey: "entry",
@@ -1936,12 +1989,12 @@ export const ensureDemoNpc = mutation({
       objectType: "board",
       sourceType: "virtual",
       zoneKey: "quest-board",
-      x: 564, y: 264, // anchor above quest-post (564,336) — keep the quest surface in the hall without clipping the HUD
+      x: 564, y: 240, // keep the board meaningfully offset from quest-post so quests.btc has a real patrol lane
       tags: ["quests", "bounties", "grants", "opportunities"],
       affordances: ["inspect", "read"],
       valueClass: "utility",
       metadataJson: JSON.stringify({
-        navAnchor: { x: 564, y: 336, label: "Opportunity Board" },
+        navAnchor: { x: 564, y: 240, label: "Opportunity Board" },
         note: "Zero Authority-backed opportunity board.",
       }),
     });
@@ -2011,12 +2064,12 @@ export const ensureDemoNpc = mutation({
       objectType: "board",
       sourceType: "virtual",
       zoneKey: "curation-desk",
-      x: 444, y: 264, // anchor above mel-post (444,336) — widened leftward from the top HUD lane
+      x: 444, y: 240, // keep the board meaningfully offset from mel-post so Mel can patrol instead of idling on her post
       tags: ["curation", "signal", "content", "projects"],
       affordances: ["inspect", "read"],
       valueClass: "utility",
       metadataJson: JSON.stringify({
-        navAnchor: { x: 444, y: 336, label: "Curation Board" },
+        navAnchor: { x: 444, y: 240, label: "Curation Board" },
         note: "Mel's paid curation surface — premium signal via x402.",
       }),
     });
@@ -2251,7 +2304,7 @@ export const ensureDemoNpc = mutation({
 
     await upsertAgentRegistryEntry(ctx, {
       agentId: DEMO_INSTANCE,
-      displayName: "guide.btc",
+      displayName: "Guide",
       network: "testnet",
       walletAddress: GUIDE_TESTNET_EXECUTION_ADDRESS,
       walletProvider: "aibtc",
@@ -2305,7 +2358,7 @@ export const ensureDemoNpc = mutation({
     });
     await upsertAgentRegistryEntry(ctx, {
       agentId: MARKET_INSTANCE,
-      displayName: "market.btc",
+      displayName: "Market",
       network: "testnet",
       walletAddress: MARKET_TESTNET_EXECUTION_ADDRESS,
       walletProvider: "aibtc",
@@ -2332,7 +2385,7 @@ export const ensureDemoNpc = mutation({
     });
     await upsertAgentRegistryEntry(ctx, {
       agentId: QUESTS_INSTANCE,
-      displayName: "quests.btc",
+      displayName: "Quests",
       network: "testnet",
       walletAddress: QUESTS_TESTNET_EXECUTION_ADDRESS,
       walletProvider: "aibtc",

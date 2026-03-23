@@ -15,6 +15,7 @@ interface WorldEvent {
   objectKey?: string;
   zoneKey?: string;
   summary: string;
+  payloadJson?: string;
   detailsJson?: string;
   timestamp: number;
 }
@@ -67,6 +68,26 @@ interface CastEntry {
   binding?: { walletAddress?: string; network?: string };
 }
 
+interface WalletIdentity {
+  walletId: string;
+  network: string;
+  address: string;
+  ownerType: string;
+  ownerId: string;
+  walletRole: string;
+  provider?: string;
+  custodyType: string;
+  status: string;
+}
+
+interface WalletLinkPayload {
+  profileId?: string;
+  network?: string;
+  address?: string;
+  provider?: string | null;
+  walletRole?: string;
+}
+
 interface SpotlightLine {
   speaker: string;
   text: string;
@@ -83,13 +104,16 @@ export class ChatPanel {
   private isOpen = false;
   private toggleBtn: HTMLButtonElement;
   private panel: HTMLElement;
+  private contentEl: HTMLElement;
   private messagesEl: HTMLElement;
   private emptyEl: HTMLElement;
   private rosterEl: HTMLElement;
   private chatterEl: HTMLElement;
   private spotlightEl: HTMLElement;
   private ledgerEl: HTMLElement;
+  private walletEl: HTMLElement;
   private ledgerUnsub: (() => void) | null = null;
+  private walletUnsub: (() => void) | null = null;
   private spotlightTimer: ReturnType<typeof setTimeout> | null = null;
   private spotlightTypingTimer: ReturnType<typeof setTimeout> | null = null;
   private seenSpotlightEventIds = new Set<string>();
@@ -152,13 +176,21 @@ export class ChatPanel {
     header.append(headerCopy, closeBtn);
     this.panel.appendChild(header);
 
+    this.contentEl = document.createElement("div");
+    this.contentEl.className = "chat-content";
+    this.panel.appendChild(this.contentEl);
+
     this.rosterEl = document.createElement("div");
     this.rosterEl.className = "chat-roster";
-    this.panel.appendChild(this.rosterEl);
+    this.contentEl.appendChild(this.rosterEl);
 
     this.chatterEl = document.createElement("div");
     this.chatterEl.className = "chat-chatter";
-    this.panel.appendChild(this.chatterEl);
+    this.contentEl.appendChild(this.chatterEl);
+
+    this.walletEl = document.createElement("div");
+    this.walletEl.className = "chat-wallet";
+    this.contentEl.appendChild(this.walletEl);
 
     this.spotlightEl = document.createElement("div");
     this.spotlightEl.className = "chat-spotlight";
@@ -167,7 +199,7 @@ export class ChatPanel {
 
     this.ledgerEl = document.createElement("div");
     this.ledgerEl.className = "chat-ledger";
-    this.panel.appendChild(this.ledgerEl);
+    this.contentEl.appendChild(this.ledgerEl);
 
     this.messagesEl = document.createElement("div");
     this.messagesEl.className = "chat-messages";
@@ -175,7 +207,7 @@ export class ChatPanel {
     this.emptyEl.className = "chat-empty";
     this.emptyEl.textContent = "No world events yet.";
     this.messagesEl.appendChild(this.emptyEl);
-    this.panel.appendChild(this.messagesEl);
+    this.contentEl.appendChild(this.messagesEl);
 
     this.el.appendChild(this.panel);
   }
@@ -208,6 +240,7 @@ export class ChatPanel {
     this.activeSpotlightId = null;
     this.subscribe();
     this.subscribeRoster();
+    this.subscribeWallet();
     this.subscribeLedger();
   }
 
@@ -233,6 +266,55 @@ export class ChatPanel {
       { mapName: this.mapName ?? undefined },
       (snapshot: unknown) => this.renderLedger(snapshot as EconomySnapshot),
     );
+  }
+
+  private subscribeWallet() {
+    this.walletUnsub?.();
+    if (!this.profile?._id) {
+      this.walletEl.innerHTML = "";
+      return;
+    }
+
+    const convex = getConvexClient();
+    this.walletUnsub = convex.onUpdate(
+      api.wallets.listWalletIdentities,
+      { ownerType: "player", ownerId: this.profile._id },
+      (rows) => this.renderWallet(rows as unknown as WalletIdentity[]),
+    );
+  }
+
+  private renderWallet(rows: WalletIdentity[]) {
+    this.walletEl.innerHTML = "";
+
+    const wallet = (rows ?? []).find((row) => row.walletRole === "payer" && row.status === "active");
+    if (!wallet) return;
+
+    const card = document.createElement("div");
+    card.className = "chat-wallet-card";
+
+    const header = document.createElement("div");
+    header.className = "chat-wallet-header";
+
+    const title = document.createElement("div");
+    title.className = "chat-wallet-title";
+    title.textContent = "Player Wallet";
+
+    const status = document.createElement("div");
+    status.className = "chat-wallet-status";
+    status.textContent = "linked";
+
+    header.append(title, status);
+
+    const meta = document.createElement("div");
+    meta.className = "chat-wallet-meta";
+    meta.textContent = `${this.formatWalletProvider(wallet.provider)} · ${wallet.network} · ${wallet.walletRole}`;
+
+    const address = document.createElement("div");
+    address.className = "chat-wallet-address";
+    address.textContent = this.shortenAddress(wallet.address);
+
+    card.append(header, meta, address);
+    this.walletEl.appendChild(card);
   }
 
   private renderLedger(snapshot: EconomySnapshot) {
@@ -665,6 +747,9 @@ export class ChatPanel {
     if (eventType.startsWith("agent-thought:")) {
       return "Agent Chatter";
     }
+    if (eventType === "player-wallet-linked") {
+      return "Wallet Linked";
+    }
     return eventType
       .split(/[-_]/g)
       .filter(Boolean)
@@ -675,6 +760,13 @@ export class ChatPanel {
   private formatScope(event: WorldEvent): string {
     if (event.eventType.startsWith("agent-thought:")) {
       return this.resolveEventSpeaker(event, this.parseEventDetails(event.detailsJson));
+    }
+    if (event.eventType === "player-wallet-linked") {
+      const payload = this.parseWalletLinkPayload(event.payloadJson);
+      const parts: string[] = [];
+      if (payload.provider) parts.push(this.formatWalletProvider(payload.provider));
+      if (payload.network) parts.push(payload.network);
+      return parts.join(" · ") || "player";
     }
     const parts: string[] = [];
     if (event.zoneKey) parts.push(event.zoneKey);
@@ -696,6 +788,15 @@ export class ChatPanel {
     }
   }
 
+  private parseWalletLinkPayload(payloadJson?: string) {
+    if (!payloadJson) return {} as WalletLinkPayload;
+    try {
+      return JSON.parse(payloadJson) as WalletLinkPayload;
+    } catch {
+      return {} as WalletLinkPayload;
+    }
+  }
+
   private resolveEventSpeaker(event: WorldEvent, details: EventDetails) {
     return details.displayName
       ?? (event.actorId ? this.castNameByAgentId.get(event.actorId) : null)
@@ -707,6 +808,22 @@ export class ChatPanel {
     if (!address) return "wallet pending";
     if (address.length <= 14) return address;
     return `${address.slice(0, 6)}…${address.slice(-4)}`;
+  }
+
+  private formatWalletProvider(provider: string | null | undefined) {
+    if (!provider) return "Stacks wallet";
+    switch (provider) {
+      case "leather":
+        return "Leather";
+      case "xverse":
+        return "Xverse";
+      case "asigna":
+        return "Asigna";
+      case "fordefi":
+        return "Fordefi";
+      default:
+        return provider.charAt(0).toUpperCase() + provider.slice(1);
+    }
   }
 
   private shortenTxid(txid: string): string {
@@ -770,6 +887,7 @@ export class ChatPanel {
     this.unsub?.();
     this.rosterUnsub?.();
     this.ledgerUnsub?.();
+    this.walletUnsub?.();
     if (this.spotlightTimer) clearTimeout(this.spotlightTimer);
     this.el.remove();
   }

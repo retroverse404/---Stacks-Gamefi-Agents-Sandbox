@@ -44,6 +44,15 @@
   animation: intro-blink 2.4s ease-in-out infinite;
 }
 
+.intro-disclaimer {
+  margin-top: 18px;
+  max-width: 480px;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.66);
+}
+
 @keyframes intro-float {
   0%, 100% { transform: translateY(0); }
   50%       { transform: translateY(-6px); }

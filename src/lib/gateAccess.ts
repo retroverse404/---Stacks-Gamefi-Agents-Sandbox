@@ -2,6 +2,7 @@ const GATE_ENABLED_FLAG = "VITE_GATE_ENABLED";
 const GATE_CODES_FLAG = "VITE_GATE_INVITE_CODES";
 const GATE_UNLOCK_KEY = "__stackshubGateUnlocked";
 const GATE_EXPIRES_AT_KEY = "__stackshubGateExpiresAt";
+const GATE_EXTENDED_EVENT = "stackshub:gate-extended";
 
 function parseInviteCodes(raw: string | undefined) {
   return (raw ?? "")
@@ -33,6 +34,16 @@ export function markGateUnlocked() {
   if (typeof window === "undefined") return;
   window.sessionStorage.setItem(GATE_UNLOCK_KEY, "1");
   window.sessionStorage.setItem(GATE_EXPIRES_AT_KEY, String(Date.now() + getGateSessionDurationMs()));
+}
+
+export function extendGateUnlockedBy(durationMs: number) {
+  if (typeof window === "undefined") return 0;
+  if (window.sessionStorage.getItem(GATE_UNLOCK_KEY) !== "1") return 0;
+  const currentExpiresAt = getGateExpiresAt();
+  const nextExpiresAt = Math.max(Date.now(), currentExpiresAt) + Math.max(0, durationMs);
+  window.sessionStorage.setItem(GATE_EXPIRES_AT_KEY, String(nextExpiresAt));
+  window.dispatchEvent(new CustomEvent(GATE_EXTENDED_EVENT, { detail: { expiresAt: nextExpiresAt } }));
+  return nextExpiresAt;
 }
 
 export function clearGateUnlocked() {
@@ -76,4 +87,8 @@ export function getGateExpiresAt() {
 export function getGateRemainingMs() {
   const expiresAt = getGateExpiresAt();
   return Math.max(0, expiresAt - Date.now());
+}
+
+export function getGateExtendedEventName() {
+  return GATE_EXTENDED_EVENT;
 }

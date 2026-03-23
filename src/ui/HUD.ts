@@ -7,6 +7,7 @@ import { api } from "../../convex/_generated/api";
 import "./HUD.css";
 
 const teneroApi: any = (api as any)["integrations/tenero"];
+const runtimePolicyApi: any = (api as any).runtimePolicy;
 const TICKER_REFRESH_MAX_AGE_MS = 5 * 60 * 1000;
 
 export type HudNowPlaying = {
@@ -14,6 +15,16 @@ export type HudNowPlaying = {
   artist: string;
   context?: string;
 } | null;
+
+type HudOptions = {
+  onOpenAgents?: () => void;
+};
+
+type HudAgentStats = {
+  total: number;
+  walletReady: number;
+  executionReady: number;
+};
 
 function formatAgeLabel(ageMs?: number | null) {
   if (typeof ageMs !== "number" || !Number.isFinite(ageMs) || ageMs < 0) return "";
@@ -33,9 +44,14 @@ export class HUD {
   private tickerSource: HTMLElement;
   private nowPlayingEl: HTMLElement;
   private nowPlayingMeta: HTMLElement;
+  private agentsButton: HTMLButtonElement;
   private unsub: (() => void) | null = null;
+  private policyUnsub: (() => void) | null = null;
+  private runtimeLoadLabel = "";
+  private sessionModeLabel = "Live Session";
+  private lastAgentStats: HudAgentStats = { total: 0, walletReady: 0, executionReady: 0 };
 
-  constructor(mode: AppMode) {
+  constructor(mode: AppMode, options: HudOptions = {}) {
     this.el = document.createElement("div");
     this.el.className = "hud";
 
@@ -52,6 +68,15 @@ export class HUD {
     this.sessionTimerEl.className = "hud-session-timer";
     this.sessionTimerEl.style.display = "none";
     this.topRow.appendChild(this.sessionTimerEl);
+
+    this.agentsButton = document.createElement("button");
+    this.agentsButton.className = "hud-agents-button";
+    this.agentsButton.innerHTML = `
+      <span class="hud-agents-button-label">Guild Ledger</span>
+      <span class="hud-agents-button-meta">0 cast · 0 exec</span>
+    `;
+    this.agentsButton.addEventListener("click", () => options.onOpenAgents?.());
+    this.topRow.appendChild(this.agentsButton);
 
     const ticker = document.createElement("div");
     ticker.className = "hud-ticker";
@@ -109,12 +134,31 @@ export class HUD {
       return;
     }
 
+    const suffix = this.runtimeLoadLabel ? ` · ${this.runtimeLoadLabel}` : "";
+    if (this.sessionModeLabel !== "Live Session") {
+      this.sessionTimerEl.style.display = "";
+      this.sessionTimerEl.textContent = `${this.sessionModeLabel.toUpperCase()} · PAYWALL OFF${suffix}`;
+      return;
+    }
+
     const safeMs = Math.max(0, remainingMs);
     const totalSeconds = Math.ceil(safeMs / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     this.sessionTimerEl.style.display = "";
-    this.sessionTimerEl.textContent = `LIVE SESSION ${minutes}:${String(seconds).padStart(2, "0")}`;
+    this.sessionTimerEl.textContent = `${this.sessionModeLabel.toUpperCase()} ${minutes}:${String(seconds).padStart(2, "0")}${suffix}`;
+  }
+
+  setSessionModeLabel(label: string) {
+    this.sessionModeLabel = label;
+  }
+
+  setAgentStatus(stats: { total: number; walletReady: number; executionReady: number }) {
+    this.lastAgentStats = stats;
+    this.agentsButton.innerHTML = `
+      <span class="hud-agents-button-label">Guild Ledger</span>
+      <span class="hud-agents-button-meta">${stats.total} cast · ${stats.executionReady} exec</span>
+    `;
   }
 
   private subscribeTicker() {
@@ -172,10 +216,27 @@ export class HUD {
     });
   }
 
+  subscribeRuntimePolicy() {
+    this.policyUnsub?.();
+    if (!runtimePolicyApi?.getClientPolicySnapshot) return;
+    const convex = getConvexClient();
+    this.policyUnsub = convex.onUpdate(runtimePolicyApi.getClientPolicySnapshot, {}, (payload: any) => {
+      const activePlayers = Number(payload?.activePlayers ?? 0);
+      const maxPlayers = Number(payload?.maxConcurrentPlayers ?? 0);
+      const activeGuests = Number(payload?.activeGuestViewers ?? 0);
+      const maxGuests = Number(payload?.maxGuestViewers ?? 0);
+      const parts: string[] = [];
+      if (maxPlayers > 0) parts.push(`${activePlayers}/${maxPlayers} players`);
+      if (maxGuests > 0) parts.push(`${activeGuests}/${maxGuests} guests`);
+      this.runtimeLoadLabel = parts.join(" · ");
+    });
+  }
+
   show() { this.el.style.display = ""; }
   hide() { this.el.style.display = "none"; }
   destroy() {
     this.unsub?.();
+    this.policyUnsub?.();
     this.el.remove();
   }
 }

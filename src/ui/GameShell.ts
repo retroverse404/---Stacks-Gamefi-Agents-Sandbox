@@ -10,11 +10,59 @@ import { MapBrowser } from "./MapBrowser.ts";
 import { MapEditorPanel } from "../editor/MapEditorPanel.ts";
 import { SpriteEditorPanel } from "../sprited/SpriteEditorPanel.ts";
 import { CharacterPanel } from "./CharacterPanel.ts";
+import { AgentsPanel } from "./AgentsPanel.ts";
 import { NpcEditorPanel } from "./NpcEditorPanel.ts";
 import { ItemEditorPanel } from "./ItemEditorPanel.ts";
 import type { AppMode, ProfileData } from "../engine/types.ts";
-import { getGateRemainingMs, isGateEnabled, isGateUnlocked } from "../lib/gateAccess.ts";
+import { getConvexClient } from "../lib/convexClient.ts";
+import { X402RequestError, resolveX402Url, x402Fetch } from "../lib/x402.ts";
+import { api } from "../../convex/_generated/api";
+import {
+  extendGateUnlockedBy,
+  getGateRemainingMs,
+  isGateEnabled,
+  isGateUnlocked,
+} from "../lib/gateAccess.ts";
+import {
+  APP_SESSION_CONTINUATION_OFFER_KEY,
+  ensureRuntimeSessionStarted,
+  getRuntimePaidSessionDurationMs,
+  getRuntimeSessionModeLabel,
+  getRuntimeSessionRemainingMs,
+  grantRuntimePaidContinuation,
+  isRuntimeSessionPaywallEnabled,
+} from "../lib/runtimeSession.ts";
 import "./GameShell.css";
+
+type PremiumOfferRecord = {
+  offerKey: string;
+  title: string;
+  description: string;
+  priceAsset: string;
+  priceAmount: string;
+  network?: string;
+  endpointPath?: string;
+  status: string;
+};
+
+function formatSessionOfferPrice(offer: PremiumOfferRecord) {
+  return `${offer.priceAmount} ${offer.priceAsset}`;
+}
+
+function getUiErrorMessage(error: unknown) {
+  if (error instanceof X402RequestError) {
+    const detail =
+      typeof error.details === "string"
+        ? error.details
+        : typeof (error.details as any)?.message === "string"
+          ? (error.details as any).message
+          : "";
+    return detail || error.message;
+  }
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return "Unknown session continuation error.";
+}
 
 export class GameShell {
   readonly el: HTMLElement;
@@ -27,6 +75,8 @@ export class GameShell {
   private debugPanel: HTMLElement | null = null;
   private debugTimer: ReturnType<typeof setInterval> | null = null;
   private sessionHudTimer: ReturnType<typeof setInterval> | null = null;
+  private sessionPaywallEl: HTMLDivElement | null = null;
+  private sessionPaywallPending = false;
 
   // UI panels
   private hud!: HUD;
@@ -38,6 +88,7 @@ export class GameShell {
   private npcEditor!: NpcEditorPanel;
   private itemEditor!: ItemEditorPanel;
   private characterPanel!: CharacterPanel;
+  private agentsPanel!: AgentsPanel;
 
   private muteKeyHandler: ((e: KeyboardEvent) => void) | null = null;
 
@@ -114,6 +165,7 @@ export class GameShell {
       this.mapEditor?.loadPlacedObjects(mapName);
       this.mapEditor?.loadPlacedItems(mapName);
       this.hud?.setNowPlaying(game.getCurrentMusicCredit());
+      this.agentsPanel?.setContext(mapName);
     };
 
     // Mode toggle (top-left) with sound button
@@ -138,9 +190,12 @@ export class GameShell {
     document.addEventListener("keydown", this.muteKeyHandler);
 
     // HUD overlay
-    this.hud = new HUD(this.mode);
+    this.hud = new HUD(this.mode, {
+      onOpenAgents: () => this.agentsPanel?.toggle(),
+    });
     this.el.appendChild(this.hud.el);
     this.hud.setNowPlaying(game.getCurrentMusicCredit());
+    this.hud.subscribeRuntimePolicy();
     this.startSessionHud();
 
     if (import.meta.env.DEV) {
@@ -180,6 +235,12 @@ export class GameShell {
       this.characterPanel = new CharacterPanel();
       this.characterPanel.setGame(game);
       this.el.appendChild(this.characterPanel.el);
+
+      this.agentsPanel = new AgentsPanel({
+        onStatsChange: (stats) => this.hud?.setAgentStatus(stats),
+      });
+      this.agentsPanel.setContext(game.currentMapName);
+      this.el.appendChild(this.agentsPanel.el);
     }
 
     this.syncVisibility();
@@ -200,6 +261,7 @@ export class GameShell {
     this.npcEditor?.toggle(this.mode === "npc-edit");
     this.itemEditor?.toggle(this.mode === "item-edit");
     this.characterPanel?.toggle(this.mode === "play");
+    this.agentsPanel?.setVisible(this.mode === "play");
   }
 
   private showError(message: string) {
@@ -253,17 +315,161 @@ export class GameShell {
   hide() { this.el.style.display = "none"; }
 
   private startSessionHud() {
-    if (!isGateEnabled() || !isGateUnlocked()) {
-      this.hud.setSessionCountdown(null);
-      return;
-    }
+    ensureRuntimeSessionStarted();
+    const paywallEnabled = isRuntimeSessionPaywallEnabled();
+    this.hud.setSessionModeLabel(getRuntimeSessionModeLabel());
+
+    const getRemainingMs = () => {
+      if (!paywallEnabled) {
+        return 0;
+      }
+      const runtimeRemainingMs = getRuntimeSessionRemainingMs();
+      if (isGateEnabled() && isGateUnlocked()) {
+        return Math.min(runtimeRemainingMs, getGateRemainingMs());
+      }
+      return runtimeRemainingMs;
+    };
 
     const paint = () => {
-      this.hud.setSessionCountdown(getGateRemainingMs());
+      if (!paywallEnabled) {
+        this.hud.setSessionCountdown(0);
+        return;
+      }
+      const remainingMs = getRemainingMs();
+      this.hud.setSessionCountdown(remainingMs);
+      if (remainingMs <= 0) {
+        this.ensureSessionPaywall();
+      }
     };
 
     paint();
     this.sessionHudTimer = setInterval(paint, 1000);
+  }
+
+  private ensureSessionPaywall() {
+    if (this.sessionPaywallEl || this.sessionPaywallPending) return;
+    this.openSessionPaywall().catch((error) => {
+      console.warn("Failed to open session continuation paywall:", error);
+    });
+  }
+
+  private async openSessionPaywall() {
+    const convex = getConvexClient();
+    const offer = (await convex.query((api as any)["integrations/x402"].getOffer, {
+      offerKey: APP_SESSION_CONTINUATION_OFFER_KEY,
+    })) as PremiumOfferRecord | null;
+
+    const overlay = document.createElement("div");
+    overlay.className = "game-session-paywall";
+
+    const card = document.createElement("div");
+    card.className = "game-session-paywall-card";
+
+    const eyebrow = document.createElement("div");
+    eyebrow.className = "game-session-paywall-eyebrow";
+    eyebrow.textContent = "Live session complete";
+
+    const title = document.createElement("h2");
+    title.className = "game-session-paywall-title";
+    title.textContent = "Continue the sandbox";
+
+    const body = document.createElement("p");
+    body.className = "game-session-paywall-body";
+    body.textContent =
+      "Your free live window has ended. Continue exploring agents, DeFi surfaces, and world interactions by approving an x402 session payment.";
+
+    const meta = document.createElement("div");
+    meta.className = "game-session-paywall-meta";
+    meta.textContent = offer
+      ? `${formatSessionOfferPrice(offer)} · ${offer.network ?? "testnet"} · +${Math.round(
+          getRuntimePaidSessionDurationMs() / 60000,
+        )} min`
+      : "Session continuation offer unavailable.";
+
+    const status = document.createElement("div");
+    status.className = "game-session-paywall-status";
+    status.textContent = offer
+      ? "Approve the wallet prompt to keep the session open."
+      : "No active session continuation offer is configured.";
+
+    const footnote = document.createElement("p");
+    footnote.className = "game-session-paywall-footnote";
+    footnote.textContent =
+      "* Payments go directly toward ongoing research and development of the project.";
+
+    const actionRow = document.createElement("div");
+    actionRow.className = "game-session-paywall-actions";
+
+    const reloadBtn = document.createElement("button");
+    reloadBtn.className = "game-session-paywall-secondary";
+    reloadBtn.textContent = "Refresh";
+    reloadBtn.addEventListener("click", () => window.location.reload());
+
+    const payBtn = document.createElement("button");
+    payBtn.className = "game-session-paywall-primary";
+    payBtn.textContent = offer ? `Pay ${formatSessionOfferPrice(offer)}` : "Offer unavailable";
+    payBtn.disabled = !offer || !offer.endpointPath;
+    payBtn.addEventListener("click", () => {
+      if (!offer || !offer.endpointPath) return;
+      void this.runSessionContinuationPayment(offer, { status, payBtn, reloadBtn });
+    });
+
+    actionRow.append(reloadBtn, payBtn);
+    card.append(eyebrow, title, body, meta, status, footnote, actionRow);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+    this.sessionPaywallEl = overlay;
+  }
+
+  private closeSessionPaywall() {
+    this.sessionPaywallEl?.remove();
+    this.sessionPaywallEl = null;
+    this.sessionPaywallPending = false;
+  }
+
+  private async runSessionContinuationPayment(
+    offer: PremiumOfferRecord,
+    controls: {
+      status: HTMLElement;
+      payBtn: HTMLButtonElement;
+      reloadBtn: HTMLButtonElement;
+    },
+  ) {
+    if (this.sessionPaywallPending) return;
+    this.sessionPaywallPending = true;
+    controls.payBtn.disabled = true;
+    controls.reloadBtn.disabled = true;
+    controls.status.textContent = "Requesting x402 challenge and wallet approval…";
+
+    try {
+      const result = await x402Fetch<Record<string, unknown>>(
+        resolveX402Url(offer.endpointPath ?? "/api/premium/session/continue"),
+        offer.network === "mainnet" ? "mainnet" : "testnet",
+      );
+
+      const paymentTxid =
+        typeof result.paymentTxid === "string" && result.paymentTxid
+          ? result.paymentTxid
+          : typeof result.grantAccessTxid === "string" && result.grantAccessTxid
+            ? result.grantAccessTxid
+            : null;
+
+      grantRuntimePaidContinuation({ paymentTxid });
+      if (isGateEnabled() && isGateUnlocked()) {
+        extendGateUnlockedBy(getRuntimePaidSessionDurationMs());
+      }
+
+      controls.status.textContent = "Session extended. Returning you to the live sandbox…";
+      window.setTimeout(() => {
+        this.closeSessionPaywall();
+        this.hud.setSessionCountdown(getRuntimeSessionRemainingMs());
+      }, 650);
+    } catch (error) {
+      controls.status.textContent = getUiErrorMessage(error);
+      controls.payBtn.disabled = false;
+      controls.reloadBtn.disabled = false;
+      this.sessionPaywallPending = false;
+    }
   }
 
   destroy() {
@@ -278,6 +484,7 @@ export class GameShell {
       clearInterval(this.debugTimer);
       this.debugTimer = null;
     }
+    this.closeSessionPaywall();
     this.game?.destroy();
     this.game = null;
     this.el.remove();

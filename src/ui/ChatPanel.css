@@ -129,7 +129,7 @@
   left: 12px;
   z-index: 100;
   width: 400px;
-  max-height: 420px;
+  height: min(72vh, 560px);
   background: rgba(18, 17, 15, 0.82);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -139,6 +139,14 @@
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.chat-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 10px;
 }
 
 .chat-header {
@@ -180,12 +188,55 @@
   color: var(--text-primary);
 }
 
-.chat-messages {
-  flex: 1;
+.chat-wallet {
+  padding: 10px 12px 0;
+}
+
+.chat-wallet-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   padding: 10px 12px;
-  overflow-y: auto;
-  min-height: 140px;
-  max-height: 280px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 160, 90, 0.16);
+  background: rgba(255, 141, 77, 0.06);
+}
+
+.chat-wallet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.chat-wallet-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.chat-wallet-status {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.chat-wallet-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.chat-wallet-address {
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.chat-messages {
+  flex: 0 0 auto;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -550,6 +601,11 @@
 }
 
 @media (max-width: 900px) {
+  .chat-panel {
+    width: min(400px, calc(100vw - 24px));
+    height: min(68vh, 540px);
+  }
+
   .chat-spotlight {
     top: 10px;
     right: 10px;
