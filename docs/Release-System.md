@@ -2,6 +2,8 @@
 
 Purpose: define the minimum operating system that keeps `stackshub.space`, Render, Convex, and GitHub aligned without guessing.
 
+Last updated: 2026-03-23 12:08:36 IST
+
 ## Ownership
 
 | Layer | Source of truth | What it owns |
@@ -19,6 +21,32 @@ Purpose: define the minimum operating system that keeps `stackshub.space`, Rende
 3. Let the relevant host redeploy.
 4. Smoke test the live URL.
 5. Record the result in Obsidian.
+
+## Definition Of Synced
+
+Do not call the stack synced until all of these are true:
+
+- GitHub has the commit pushed on `release/dungeons-and-agents`
+- Vercel is on the expected frontend commit if UI code changed
+- Render is on the expected commit if x402 code changed
+- Convex production is deployed if backend code changed
+- the hosted URL has been smoke-tested in a fresh incognito tab
+- the result is written into the timestamped release ledger
+
+## Required Release Record
+
+Every live-affecting change gets one release record with:
+
+- timestamp in `YYYY-MM-DD HH:MM:SS IST`
+- branch
+- commit sha
+- Vercel status and deployment id
+- Render status and deploy id
+- Convex deployment status
+- smoke-test result
+- unresolved risks
+
+If one of those fields is unknown, the release is still in progress.
 
 ## What Triggers What
 
@@ -40,7 +68,36 @@ Purpose: define the minimum operating system that keeps `stackshub.space`, Rende
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`
-- `npm run demo:doctor` before demo capture or judge claims
+- `npm run demo:doctor` before demo capture or live claims
+
+## Smoke Test Sequence
+
+Run this sequence in a fresh incognito tab after any live-affecting change:
+
+1. load `https://stackshub.space`
+2. confirm auth screen renders correctly
+3. confirm guest entry works
+4. confirm wallet buttons are visible
+5. confirm world loads
+6. confirm one premium interaction opens cleanly
+7. confirm session timeout path does not trap the user
+
+## No-Guess Rule
+
+If production behavior conflicts with local behavior:
+
+- trust the live evidence, not memory
+- write the discrepancy into the release ledger
+- identify the owning layer
+- only then patch the relevant service
+
+## Temporary Stabilization Rule
+
+If a live issue blocks the hosted flow and the fix is not ready:
+
+- prefer a reversible fallback over a broken paywall or dead-end
+- record the fallback in the release ledger
+- remove it only after the owning path is verified
 
 ## Sync Rule
 
@@ -60,4 +117,4 @@ During judge window:
 - prefer explicit deploys over clever automation
 - keep the release branch stable
 - avoid broad architecture changes
-- change only what affects the judge path, evidence, or cost
+- change only what affects the hosted path, evidence, or cost
