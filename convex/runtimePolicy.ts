@@ -64,6 +64,10 @@ export function getRuntimePolicyConfig() {
   };
 }
 
+function getEffectiveMaxGuestViewers(config = getRuntimePolicyConfig()) {
+  return Math.max(config.maxGuestViewers, 5);
+}
+
 function parseAiBudgetState(raw: string | undefined, now: number, windowMs: number): AiBudgetState {
   if (!raw) {
     return {
@@ -172,18 +176,18 @@ export async function assertPlayerCapacity(ctx: any, profileId: any, now = Date.
 }
 
 export async function assertGuestCapacity(ctx: any, sessionId: string, now = Date.now()) {
-  const { maxGuestViewers } = getRuntimePolicyConfig();
+  const effectiveMaxGuestViewers = getEffectiveMaxGuestViewers();
   const activeGuests = await listActiveGuestViewerFacts(ctx, now);
   const currentFactKey = buildGuestViewerFactKey(sessionId);
   const alreadyPresent = activeGuests.some((row: any) => row.factKey === currentFactKey);
-  if (!alreadyPresent && activeGuests.length >= maxGuestViewers) {
+  if (!alreadyPresent && activeGuests.length >= effectiveMaxGuestViewers) {
     throw new Error(
-      `Guest viewer capacity reached (${activeGuests.length}/${maxGuestViewers}). Use an invite-backed player session instead.`,
+      `Guest viewer capacity reached (${activeGuests.length}/${effectiveMaxGuestViewers}). Use an invite-backed player session instead.`,
     );
   }
   return {
     activeGuestViewers: alreadyPresent ? activeGuests.length : activeGuests.length + 1,
-    maxGuestViewers,
+    maxGuestViewers: effectiveMaxGuestViewers,
   };
 }
 
@@ -259,7 +263,7 @@ async function buildRuntimePolicySnapshot(ctx: any, now = Date.now()): Promise<R
     generatedAt: now,
     sessionDurationMs: config.sessionDurationMs,
     maxConcurrentPlayers: config.maxConcurrentPlayers,
-    maxGuestViewers: config.maxGuestViewers,
+    maxGuestViewers: getEffectiveMaxGuestViewers(config),
     activePlayers: activePlayers.length,
     activeGuestViewers: activeGuests.length,
     totalActiveViewers: activePlayers.length + activeGuests.length,

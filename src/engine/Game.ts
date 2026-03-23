@@ -25,6 +25,8 @@ const PRESENCE_INTERVAL_MS = 250;   // how often to push position to Convex
 const GUEST_HEARTBEAT_INTERVAL_MS = 3_000;
 const SAVE_INTERVAL_MS = 30_000;   // how often to persist position to profile (was 10s)
 const PRESENCE_MOVE_THRESHOLD = 2; // px — skip presence update if player hasn't moved
+const INIT_NETWORK_TIMEOUT_MS = 4_500;
+const BACKGROUND_BOOT_TIMEOUT_MS = 5_000;
 const DEFAULT_ITEM_PICKUP_SFX = "/assets/audio/take-item.mp3";
 const DEFAULT_MAP_MUSIC_VOLUME = 0.15;
 const COZY_CABIN_MUSIC_URL = "/assets/audio/Nardis%20%28Miles%20Davis%29%20HipHop%20Remix.mp3";
@@ -184,6 +186,25 @@ function getErrorMessage(error: unknown) {
   return "Unknown premium interaction error.";
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      reject(new Error(`${label} timed out after ${ms}ms`));
+    }, ms);
+
+    promise.then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 /**
  * Main game class. Manages the PixiJS application, camera, map rendering,
  * entity layer, input, and audio. Now profile-aware for multiplayer.
@@ -322,14 +343,18 @@ export class Game {
     const convex = getConvexClient();
 
     try {
-      await convex.mutation((api as any).runtimePolicy.assertViewerAdmission, {
+      await withTimeout(convex.mutation((api as any).runtimePolicy.assertViewerAdmission, {
         viewerType: this.isGuest ? "guest" : "player",
         ...(this.isGuest
           ? { sessionId: getOrCreateRuntimeViewerId() }
           : { profileId: this.profile._id as Id<"profiles"> }),
-      });
+      }), INIT_NETWORK_TIMEOUT_MS, "viewer admission");
     } catch (error) {
+      if (this.isGuest) {
+        console.warn("Guest viewer admission unavailable during init, continuing with hosted fallback:", error);
+      } else {
       throw new Error(getErrorMessage(error));
+      }
     }
 
     // Seed any static JSON maps that aren't yet in Convex.
@@ -516,7 +541,11 @@ export class Game {
         console.log(`[loadDefaultMap] querying Convex for map candidates: ${mapCandidates.join(", ")}...`);
         let saved = null;
         for (const candidate of mapCandidates) {
-          saved = await convex.query(api.maps.getByName, { name: candidate });
+          saved = await withTimeout(
+            convex.query(api.maps.getByName, { name: candidate }),
+            INIT_NETWORK_TIMEOUT_MS,
+            `map lookup (${candidate})`,
+          );
           if (saved) break;
         }
         if (saved) {
@@ -663,32 +692,59 @@ export class Game {
       }
 
       // Load placed objects from Convex and subscribe to changes
-      await this.loadPlacedObjects(this.currentMapName);
-      this.subscribeToMapObjects(this.currentMapName);
-
-      // Load and subscribe to world items
-      await this.loadWorldItems(this.currentMapName);
-      this.subscribeToWorldItems(this.currentMapName);
-      await this.loadSemanticInteractables(this.currentMapName);
-
-      // Subscribe to server-authoritative NPC state
-      await this.loadSpriteDefs();
-      this.subscribeToNpcState(this.currentMapName);
-      this.subscribeToAgentChatter(this.currentMapName);
-
-      // Ensure the NPC tick loop is running on the server.
-      try {
-        const convex = getConvexClient();
-        await convex.mutation(api.npcEngine.ensureLoop, {});
-      } catch (e) {
-        console.warn("NPC ensureLoop failed (OK on first run):", e);
-      }
-
       // Start background music (use map's musicUrl, fallback to default)
       this.playMapMusic(mapData!);
+      this.bootstrapInitialWorldState(this.currentMapName);
     } catch (err) {
       console.warn("Failed to load default map:", err);
     }
+  }
+
+  private bootstrapInitialWorldState(mapName: string) {
+    void (async () => {
+      try {
+        await withTimeout(this.loadPlacedObjects(mapName), BACKGROUND_BOOT_TIMEOUT_MS, "placed objects");
+      } catch (error) {
+        console.warn("Initial placed object bootstrap timed out:", error);
+      }
+      this.subscribeToMapObjects(mapName);
+
+      try {
+        await withTimeout(this.loadWorldItems(mapName), BACKGROUND_BOOT_TIMEOUT_MS, "world items");
+      } catch (error) {
+        console.warn("Initial world item bootstrap timed out:", error);
+      }
+      this.subscribeToWorldItems(mapName);
+
+      try {
+        await withTimeout(
+          this.loadSemanticInteractables(mapName),
+          BACKGROUND_BOOT_TIMEOUT_MS,
+          "semantic interactables",
+        );
+      } catch (error) {
+        console.warn("Initial semantic interactable bootstrap timed out:", error);
+      }
+
+      try {
+        await withTimeout(this.loadSpriteDefs(), BACKGROUND_BOOT_TIMEOUT_MS, "sprite definitions");
+      } catch (error) {
+        console.warn("Initial sprite definition bootstrap timed out:", error);
+      }
+      this.subscribeToNpcState(mapName);
+      this.subscribeToAgentChatter(mapName);
+
+      try {
+        const convex = getConvexClient();
+        await withTimeout(
+          convex.mutation(api.npcEngine.ensureLoop, {}),
+          BACKGROUND_BOOT_TIMEOUT_MS,
+          "npc loop bootstrap",
+        );
+      } catch (error) {
+        console.warn("NPC ensureLoop failed during bootstrap:", error);
+      }
+    })();
   }
 
   // ===========================================================================
