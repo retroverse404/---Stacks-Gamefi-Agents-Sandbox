@@ -7,7 +7,7 @@ import {
 } from "./stacksWallet.ts";
 
 type AppNetwork = StacksAppNetwork;
-const X402_FETCH_TIMEOUT_MS = 12000;
+const X402_FETCH_TIMEOUT_MS = 65000;
 
 interface PaymentRequirementsV2 {
   scheme: string;
@@ -191,7 +191,7 @@ async function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit) {
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
       throw new Error(
-        "The x402 service did not respond in time. Retry in a moment. If this keeps happening, the payment service is unavailable.",
+        "The payment service took too long to wake up. Retry in a moment. If this keeps happening, the payment service is unavailable.",
       );
     }
     throw error;
