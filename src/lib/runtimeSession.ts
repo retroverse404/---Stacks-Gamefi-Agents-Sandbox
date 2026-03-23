@@ -10,7 +10,7 @@ function syncSessionPaywallOverrideFromUrl() {
   const url = new URL(window.location.href);
   const override = url.searchParams.get("sessionPaywall");
   if (override === "on" || override === "off") {
-    window.localStorage.setItem(SESSION_PAYWALL_OVERRIDE_KEY, override);
+    window.sessionStorage.setItem(SESSION_PAYWALL_OVERRIDE_KEY, override);
     url.searchParams.delete("sessionPaywall");
     window.history.replaceState({}, "", url.toString());
     return override;
@@ -21,16 +21,16 @@ function syncSessionPaywallOverrideFromUrl() {
 function readSessionPaywallOverride() {
   if (typeof window === "undefined") return null;
   return syncSessionPaywallOverrideFromUrl()
-    ?? window.localStorage.getItem(SESSION_PAYWALL_OVERRIDE_KEY);
+    ?? window.sessionStorage.getItem(SESSION_PAYWALL_OVERRIDE_KEY);
 }
 
 export function setRuntimeSessionPaywallOverride(override: "on" | "off" | null) {
   if (typeof window === "undefined") return;
   if (override === null) {
-    window.localStorage.removeItem(SESSION_PAYWALL_OVERRIDE_KEY);
+    window.sessionStorage.removeItem(SESSION_PAYWALL_OVERRIDE_KEY);
     return;
   }
-  window.localStorage.setItem(SESSION_PAYWALL_OVERRIDE_KEY, override);
+  window.sessionStorage.setItem(SESSION_PAYWALL_OVERRIDE_KEY, override);
 }
 
 function readFreeSessionMinutes() {
