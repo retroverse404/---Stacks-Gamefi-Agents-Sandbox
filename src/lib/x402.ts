@@ -7,6 +7,7 @@ import {
 } from "./stacksWallet.ts";
 
 type AppNetwork = StacksAppNetwork;
+const X402_FETCH_TIMEOUT_MS = 12000;
 
 interface PaymentRequirementsV2 {
   scheme: string;
@@ -179,6 +180,26 @@ function parse402Response(response: Response, body: unknown): PaymentRequiredV2 
   throw new Error("No valid x402 payment requirements found in 402 response.");
 }
 
+async function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), X402_FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(
+        "The x402 service did not respond in time. Retry in a moment. If this keeps happening, the payment service is unavailable.",
+      );
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
 async function signX402Payment(
   paymentRequired: PaymentRequiredV2,
   accepted: PaymentRequirementsV2,
@@ -262,7 +283,7 @@ export async function x402Fetch<T>(
   network: AppNetwork,
   init?: RequestInit,
 ): Promise<T> {
-  const firstResponse = await fetch(endpointUrl, init);
+  const firstResponse = await fetchWithTimeout(endpointUrl, init);
   if (firstResponse.status !== 402) {
     const body = await parseJsonIfPossible(firstResponse);
     if (!firstResponse.ok) {
@@ -284,7 +305,7 @@ export async function x402Fetch<T>(
 
   const encodedPayload = await signX402Payment(paymentRequired, accepted, network);
 
-  const retryResponse = await fetch(endpointUrl, {
+  const retryResponse = await fetchWithTimeout(endpointUrl, {
     ...init,
     headers: {
       ...(init?.headers ?? {}),

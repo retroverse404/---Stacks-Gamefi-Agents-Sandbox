@@ -2,9 +2,6 @@ import "./env.js";
 import type { Request, Response } from "express";
 import express from "express";
 import { STXtoMicroSTX, getPayment, paymentMiddleware } from "x402-stacks";
-import { AlexSDK, Currency } from "alex-sdk";
-
-const alex = new AlexSDK();
 import { registerLocalFacilitatorRoutes } from "./facilitator.js";
 import { getHiroNodeBaseUrl, isHiroConfigured } from "./hiro.js";
 import {
@@ -36,6 +33,10 @@ const questsServerAddress = process.env.QUESTS_SERVER_ADDRESS || serverAddress;
 const sessionServerAddress = process.env.SESSION_SERVER_ADDRESS || serverAddress || guideServerAddress;
 const hostedServiceUrl = process.env.RENDER_EXTERNAL_URL || "";
 const resolvedFacilitatorUrl = facilitatorUrl || hostedServiceUrl || `http://127.0.0.1:${port}`;
+let alexClientPromise: Promise<{
+  alex: { getAmountTo: (tokenX: unknown, amountIn: bigint, tokenY: unknown) => Promise<bigint> };
+  Currency: Record<string, unknown>;
+}> | null = null;
 
 const GUIDE_PREMIUM_ACCESS: Omit<PremiumAccessGrantConfig, "payerPrincipal" | "paymentTxid"> = {
   agentDisplayName: "guide.btc",
@@ -84,6 +85,17 @@ const SESSION_CONTINUATION_PREMIUM_ACCESS: Omit<
   agentInstanceName: "stackshub-session",
   resourceId: "stackshub-session-continuation",
 };
+
+async function getAlexClient() {
+  if (!alexClientPromise) {
+    alexClientPromise = import("alex-sdk").then(({ AlexSDK, Currency }) => ({
+      alex: new AlexSDK(),
+      Currency: Currency as Record<string, unknown>,
+    }));
+  }
+
+  return alexClientPromise;
+}
 
 async function finalizePremiumAccess(
   req: Request,
@@ -555,6 +567,7 @@ if (!marketServerAddress) {
       let expectedAmountOut: string;
 
       try {
+        const { alex, Currency } = await getAlexClient();
         const quote = await alex.getAmountTo(
           Currency.STX,
           BigInt(amountIn),
