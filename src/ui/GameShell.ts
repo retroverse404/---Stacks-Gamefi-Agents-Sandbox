@@ -317,10 +317,8 @@ export class GameShell {
 
   private startSessionHud() {
     ensureRuntimeSessionStarted();
-    const paywallEnabled = isRuntimeSessionPaywallEnabled();
-    this.hud.setSessionModeLabel(getRuntimeSessionModeLabel());
-
     const getRemainingMs = () => {
+      const paywallEnabled = isRuntimeSessionPaywallEnabled();
       if (!paywallEnabled) {
         return 0;
       }
@@ -332,6 +330,8 @@ export class GameShell {
     };
 
     const paint = () => {
+      const paywallEnabled = isRuntimeSessionPaywallEnabled();
+      this.hud.setSessionModeLabel(getRuntimeSessionModeLabel());
       if (!paywallEnabled) {
         this.hud.setSessionCountdown(0);
         return;
@@ -356,9 +356,19 @@ export class GameShell {
 
   private async openSessionPaywall() {
     const convex = getConvexClient();
-    const offer = (await convex.query((api as any)["integrations/x402"].getOffer, {
-      offerKey: APP_SESSION_CONTINUATION_OFFER_KEY,
-    })) as PremiumOfferRecord | null;
+    let offer: PremiumOfferRecord | null = null;
+    try {
+      offer = (await convex.query((api as any)["integrations/x402"].getOffer, {
+        offerKey: APP_SESSION_CONTINUATION_OFFER_KEY,
+      })) as PremiumOfferRecord | null;
+    } catch (error) {
+      console.warn("Failed to load session continuation offer:", error);
+    }
+
+    if (!offer || !offer.endpointPath) {
+      this.continueWithoutSessionPaywall();
+      return;
+    }
 
     const overlay = document.createElement("div");
     overlay.className = "game-session-paywall";
