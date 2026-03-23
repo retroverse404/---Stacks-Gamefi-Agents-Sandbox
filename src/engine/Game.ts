@@ -260,6 +260,7 @@ export class Game {
   private premiumVideoOverlayEl: HTMLDivElement | null = null;
   private premiumVideoMusicSnapshot: MusicPlaybackSnapshot | null = null;
   private premiumInteractionPending = false;
+  private premiumInteractionRequestId = 0;
 
   // Live NPC state subscription
   private npcStateUnsub: (() => void) | null = null;
@@ -2110,6 +2111,7 @@ export class Game {
 
   private showPremiumInteractionPanel(object: SemanticInteractable, offer: PremiumOfferRecord) {
     this.closePremiumInteractionPanel();
+    const requestId = ++this.premiumInteractionRequestId;
 
     const overlay = document.createElement("div");
     overlay.style.cssText = `
@@ -2233,17 +2235,24 @@ export class Game {
         body,
         confirmBtn,
         cancelBtn,
+        requestId,
       });
     });
 
     buttonRow.append(cancelBtn, confirmBtn);
     card.append(eyebrow, title, description, details, status, body, buttonRow);
     overlay.appendChild(card);
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) {
+        this.closePremiumInteractionPanel();
+      }
+    });
     document.body.appendChild(overlay);
     this.premiumPanelEl = overlay;
   }
 
   private closePremiumInteractionPanel() {
+    this.premiumInteractionRequestId += 1;
     this.premiumPanelEl?.remove();
     this.premiumPanelEl = null;
     this.premiumInteractionPending = false;
@@ -2465,13 +2474,13 @@ export class Game {
       body: HTMLDivElement;
       confirmBtn: HTMLButtonElement;
       cancelBtn: HTMLButtonElement;
+      requestId: number;
     },
   ) {
     if (this.premiumInteractionPending) return;
     this.premiumInteractionPending = true;
 
     controls.confirmBtn.disabled = true;
-    controls.cancelBtn.disabled = true;
     controls.status.textContent = "Waiting for x402 challenge and wallet approval…";
     controls.body.textContent =
       "The game is requesting the premium payment flow from the mapped offer. If your wallet opens, approve the transaction to continue.";
@@ -2484,6 +2493,9 @@ export class Game {
         resolveX402Url(offer.endpointPath || ""),
         network,
       );
+      if (controls.requestId !== this.premiumInteractionRequestId || !this.premiumPanelEl) {
+        return;
+      }
 
       const successEventType =
         object.metadata.eventBindings?.paid ||
@@ -2535,6 +2547,9 @@ export class Game {
       controls.confirmBtn.style.display = "none";
       controls.cancelBtn.disabled = false;
     } catch (error) {
+      if (controls.requestId !== this.premiumInteractionRequestId || !this.premiumPanelEl) {
+        return;
+      }
       console.warn("Premium interactable flow failed:", error);
       controls.status.textContent = "Premium unlock failed.";
       controls.body.textContent =
@@ -2545,7 +2560,9 @@ export class Game {
       controls.cancelBtn.disabled = false;
       controls.confirmBtn.textContent = "Try again";
     } finally {
-      this.premiumInteractionPending = false;
+      if (controls.requestId === this.premiumInteractionRequestId) {
+        this.premiumInteractionPending = false;
+      }
     }
   }
 
