@@ -24,6 +24,15 @@ function readSessionPaywallOverride() {
     ?? window.localStorage.getItem(SESSION_PAYWALL_OVERRIDE_KEY);
 }
 
+export function setRuntimeSessionPaywallOverride(override: "on" | "off" | null) {
+  if (typeof window === "undefined") return;
+  if (override === null) {
+    window.localStorage.removeItem(SESSION_PAYWALL_OVERRIDE_KEY);
+    return;
+  }
+  window.localStorage.setItem(SESSION_PAYWALL_OVERRIDE_KEY, override);
+}
+
 function readFreeSessionMinutes() {
   const freeMinutes = Number(import.meta.env.VITE_RUNTIME_FREE_SESSION_MINUTES);
   if (Number.isFinite(freeMinutes) && freeMinutes > 0) return freeMinutes;

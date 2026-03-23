@@ -31,6 +31,7 @@ import {
   getRuntimeSessionRemainingMs,
   grantRuntimePaidContinuation,
   isRuntimeSessionPaywallEnabled,
+  setRuntimeSessionPaywallOverride,
 } from "../lib/runtimeSession.ts";
 import "./GameShell.css";
 
@@ -405,16 +406,23 @@ export class GameShell {
     reloadBtn.textContent = "Refresh";
     reloadBtn.addEventListener("click", () => window.location.reload());
 
+    const bypassBtn = document.createElement("button");
+    bypassBtn.className = "game-session-paywall-secondary";
+    bypassBtn.textContent = "Keep Exploring";
+    bypassBtn.addEventListener("click", () => {
+      this.continueWithoutSessionPaywall({ status, payBtn, reloadBtn, bypassBtn });
+    });
+
     const payBtn = document.createElement("button");
     payBtn.className = "game-session-paywall-primary";
     payBtn.textContent = offer ? `Pay ${formatSessionOfferPrice(offer)}` : "Offer unavailable";
     payBtn.disabled = !offer || !offer.endpointPath;
     payBtn.addEventListener("click", () => {
       if (!offer || !offer.endpointPath) return;
-      void this.runSessionContinuationPayment(offer, { status, payBtn, reloadBtn });
+      void this.runSessionContinuationPayment(offer, { status, payBtn, reloadBtn, bypassBtn });
     });
 
-    actionRow.append(reloadBtn, payBtn);
+    actionRow.append(reloadBtn, bypassBtn, payBtn);
     card.append(eyebrow, title, body, meta, status, footnote, actionRow);
     overlay.appendChild(card);
     document.body.appendChild(overlay);
@@ -427,18 +435,41 @@ export class GameShell {
     this.sessionPaywallPending = false;
   }
 
+  private continueWithoutSessionPaywall(controls?: {
+    status?: HTMLElement;
+    payBtn?: HTMLButtonElement;
+    reloadBtn?: HTMLButtonElement;
+    bypassBtn?: HTMLButtonElement;
+  }) {
+    setRuntimeSessionPaywallOverride("off");
+    if (controls?.status) {
+      controls.status.textContent = "Payment service unavailable. Continuing without the session paywall.";
+    }
+    if (controls?.payBtn) controls.payBtn.disabled = true;
+    if (controls?.reloadBtn) controls.reloadBtn.disabled = true;
+    if (controls?.bypassBtn) controls.bypassBtn.disabled = true;
+
+    window.setTimeout(() => {
+      this.closeSessionPaywall();
+      this.hud.setSessionModeLabel(getRuntimeSessionModeLabel());
+      this.hud.setSessionCountdown(getRuntimeSessionRemainingMs());
+    }, 250);
+  }
+
   private async runSessionContinuationPayment(
     offer: PremiumOfferRecord,
     controls: {
       status: HTMLElement;
       payBtn: HTMLButtonElement;
       reloadBtn: HTMLButtonElement;
+      bypassBtn: HTMLButtonElement;
     },
   ) {
     if (this.sessionPaywallPending) return;
     this.sessionPaywallPending = true;
     controls.payBtn.disabled = true;
     controls.reloadBtn.disabled = true;
+    controls.bypassBtn.disabled = false;
     controls.status.textContent = "Requesting x402 challenge and wallet approval…";
 
     try {
@@ -465,9 +496,13 @@ export class GameShell {
         this.hud.setSessionCountdown(getRuntimeSessionRemainingMs());
       }, 650);
     } catch (error) {
-      controls.status.textContent = getUiErrorMessage(error);
+      const message = getUiErrorMessage(error);
+      controls.status.textContent = message;
       controls.payBtn.disabled = false;
       controls.reloadBtn.disabled = false;
+      if (message.includes("payment service is unavailable")) {
+        controls.bypassBtn.textContent = "Continue Without Paywall";
+      }
       this.sessionPaywallPending = false;
     }
   }
