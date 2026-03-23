@@ -134,6 +134,8 @@ You will be prompted to type `RESTORE`.
 npm run users list
 ```
 
+For live auth monitoring, open the in-app `Superuser` panel on a superuser profile. It reads from Convex auth tables and shows recent logins plus active session counts.
+
 ### Role changes
 
 ```bash

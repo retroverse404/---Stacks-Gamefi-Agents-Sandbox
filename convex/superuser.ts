@@ -21,16 +21,50 @@ export const dashboard = query({
     const users = await ctx.db.query("users").collect();
     const profiles = await ctx.db.query("profiles").collect();
     const maps = await ctx.db.query("maps").collect();
+    const authAccounts = await ctx.db.query("authAccounts").collect();
+    const authSessions = await ctx.db.query("authSessions").collect();
+    const now = Date.now();
 
     const userById = new Map(users.map((u) => [String(u._id), u]));
     const profileById = new Map(profiles.map((p) => [String(p._id), p]));
+    const accountsByUserId = new Map<string, any[]>();
+    for (const account of authAccounts) {
+      const key = String((account as any).userId);
+      const list = accountsByUserId.get(key) ?? [];
+      list.push(account);
+      accountsByUserId.set(key, list);
+    }
+    const sessionsByUserId = new Map<string, any[]>();
+    for (const session of authSessions) {
+      const key = String((session as any).userId);
+      const list = sessionsByUserId.get(key) ?? [];
+      list.push(session);
+      sessionsByUserId.set(key, list);
+    }
 
     const usersOut = users.map((u) => {
       const p = profiles.filter((x) => x.userId === u._id);
+      const accounts = (accountsByUserId.get(String(u._id)) ?? []).map((a) => (a as any).provider as string);
+      const sessions = (sessionsByUserId.get(String(u._id)) ?? []).sort(
+        (a, b) => (b._creationTime ?? 0) - (a._creationTime ?? 0),
+      );
+      const activeSessions = sessions.filter((s) => ((s as any).expirationTime ?? 0) > now);
       return {
         _id: u._id,
         email: (u as any).email ?? null,
         isAnonymous: (u as any).isAnonymous ?? false,
+        auth: {
+          providers: accounts,
+          sessionCount: sessions.length,
+          activeSessionCount: activeSessions.length,
+          lastLoginAt: sessions[0]?._creationTime ?? null,
+          sessions: sessions.slice(0, 5).map((s) => ({
+            _id: s._id,
+            createdAt: s._creationTime ?? null,
+            expirationTime: (s as any).expirationTime ?? null,
+            active: ((s as any).expirationTime ?? 0) > now,
+          })),
+        },
         profiles: p.map((pp) => ({
           _id: pp._id,
           name: pp.name,
@@ -55,7 +89,23 @@ export const dashboard = query({
       }),
     }));
 
-    return { users: usersOut, maps: mapsOut };
+    const recentSessions = authSessions
+      .slice()
+      .sort((a, b) => (b._creationTime ?? 0) - (a._creationTime ?? 0))
+      .slice(0, 20)
+      .map((s) => {
+        const owner = userById.get(String((s as any).userId));
+        return {
+          _id: s._id,
+          userId: (s as any).userId,
+          email: (owner as any)?.email ?? null,
+          createdAt: s._creationTime ?? null,
+          expirationTime: (s as any).expirationTime ?? null,
+          active: ((s as any).expirationTime ?? 0) > now,
+        };
+      });
+
+    return { users: usersOut, maps: mapsOut, recentSessions };
   },
 });
 

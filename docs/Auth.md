@@ -250,6 +250,7 @@ export default {
 ### `convex/admin.ts` (key functions)
 
 - **`myAccountInfo`** — query returning the authenticated user's account details: email, auth providers, profiles (name, role, level), maps created (name, status, map type), and creation date. Used by the frontend account info panel.
+- **`superuser.dashboard`** — admin-only query used by the in-app superuser panel. Shows users, profiles, maps, recent logins, active session counts, and provider links. Use this for judge-day login monitoring instead of building a second dashboard.
 
 ### `convex/maps.ts` (key functions)
 

@@ -1117,6 +1117,29 @@ export class ProfileScreen {
     }).join(", ");
   }
 
+  private formatTimestamp(value: number | null | undefined) {
+    if (!value) return "unknown";
+    return new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(value));
+  }
+
+  private formatRelativeTime(value: number | null | undefined) {
+    if (!value) return "never";
+    const diffMs = Date.now() - value;
+    if (diffMs < 0) return "just now";
+    const minutes = Math.floor(diffMs / 60_000);
+    if (minutes < 1) return `${Math.max(1, Math.floor(diffMs / 1000))}s ago`;
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
+
   private hideAccountInfo() {
     if (this.accountEl) this.accountEl.style.display = "none";
     if (this.listEl) this.listEl.style.display = "";
@@ -1152,6 +1175,25 @@ export class ProfileScreen {
       h2.textContent = "Superuser Panel";
       this.superuserEl.appendChild(h2);
 
+      const recentHeader = document.createElement("h3");
+      recentHeader.textContent = "Recent Logins";
+      this.superuserEl.appendChild(recentHeader);
+
+      const recentLogins = Array.isArray(data.recentSessions) ? data.recentSessions.slice(0, 10) : [];
+      if (recentLogins.length > 0) {
+        for (const session of recentLogins as any[]) {
+          const row = document.createElement("div");
+          row.className = "account-row";
+          row.innerHTML = `<span class="account-label">${session.email ?? "(no email)"}</span><span class="account-value">${session.active ? "active" : "expired"} · ${this.formatTimestamp(session.createdAt)}</span>`;
+          this.superuserEl.appendChild(row);
+        }
+      } else {
+        const none = document.createElement("div");
+        none.className = "account-row";
+        none.innerHTML = `<span class="account-label" style="color:var(--text-muted)">No login sessions yet</span>`;
+        this.superuserEl.appendChild(none);
+      }
+
       // Users section
       const usersHeader = document.createElement("h3");
       usersHeader.textContent = "Users & Permissions";
@@ -1162,6 +1204,18 @@ export class ProfileScreen {
         userWrap.className = "superuser-block";
         const email = u.email ?? "(no email)";
         userWrap.innerHTML = `<div class="account-row"><span class="account-label">${email}</span><span class="account-value">account</span></div>`;
+
+        const providers = this.formatProviders((u.auth?.providers ?? []) as string[]);
+        const authRow = document.createElement("div");
+        authRow.className = "account-row";
+        authRow.innerHTML = `<span class="account-label">Auth</span><span class="account-value">${providers}</span>`;
+        userWrap.appendChild(authRow);
+
+        const sessionRow = document.createElement("div");
+        sessionRow.className = "account-row";
+        const lastLogin = this.formatRelativeTime(u.auth?.lastLoginAt ?? null);
+        sessionRow.innerHTML = `<span class="account-label">Sessions</span><span class="account-value">${u.auth?.activeSessionCount ?? 0} active · ${lastLogin}</span>`;
+        userWrap.appendChild(sessionRow);
 
         for (const p of u.profiles) {
           const row = document.createElement("div");
