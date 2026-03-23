@@ -18,7 +18,7 @@ The project builds on the 61cygni/tinyrealms 2D engine, providing a strong found
 - **What it is**: a playable Stacks-native agent sandbox.
 - **World shell**: 2D map, NPC, object, and exploration layer.
 - **State layer**: Convex stores agents, offers, world facts, events, zones, and semantic objects.
-- **AI layer**: Braintrust proxy-backed LLM calls use code-defined prompts for in-world dialogue, premium responses, and autonomous agent thoughts.
+- **AI layer**: Braintrust proxy-backed LLM calls power in-world dialogue, premium responses, and autonomous agent thoughts when configured.
 - **Payment rail**: x402 gates paid actions like premium briefings and live market quotes.
 - **Contract layer**: Clarity contracts record premium access, room access, object access, collectible artifacts, and the next economy layer on Stacks testnet.
 - **Agent direction**: AIBTC informs the wallet-backed agent pattern and the `market.btc` implementation lineage.
@@ -193,7 +193,7 @@ flowchart LR
   L[Live now] --> S[Scaffolded now]
   S --> P[Planned next]
 
-  L["Live now<br/>stacks2d runtime<br/>Convex backend<br/>Braintrust proxy AI path<br/>Zero Authority ingestion<br/>Tenero live ticker<br/>guide / market / quests surfaces<br/>8 deployed testnet contracts"]
+  L["Live now<br/>stacks2d runtime<br/>Convex backend<br/>Braintrust-backed AI path<br/>Zero Authority ingestion<br/>Tenero live ticker<br/>guide / market / quests surfaces<br/>8 deployed testnet contracts"]
   S["Scaffolded now<br/>agent state tables<br/>AIBTC-compatible registry<br/>services/x402-api boundary<br/>worldFacts blackboard pattern<br/>deployed but not integrated QTC / SFT economy"]
   P["Planned next<br/>x402 proof capture in demo<br/>purposeful agents<br/>AIBTC account execution<br/>live gameplay economy wiring"]
 ```
