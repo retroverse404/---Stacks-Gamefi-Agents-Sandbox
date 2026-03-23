@@ -259,7 +259,7 @@ Authenticate or enter as guest.
 - This screen can be rebuilt from scratch visually.
 - Keep the two auth actions distinct.
 - Keep guest entry visible.
-- GitHub OAuth is not the current primary path.
+- OAuth is not the current primary path in the hosted build.
 
 ## 5.2 Profile Screen
 

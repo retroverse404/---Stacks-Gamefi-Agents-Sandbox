@@ -173,7 +173,7 @@ Everything core to the game and editor:
 | Feature | Why | Workaround |
 |---------|-----|------------|
 | AI narrative generation (`storyAi.ts`) | Calls Braintrust API (GPT-4o) | Write dialogue trees by hand (see [NPCs.md](NPCs.md)) |
-| GitHub OAuth | Requires GitHub servers | Not needed — game uses local profiles, no auth wall |
+| OAuth | Requires the configured remote provider | Not needed — game uses local profiles, no auth wall |
 | `npm install` (adding new packages) | Needs npm registry | Install everything before going offline |
 | Cloud Convex deployment (`npm run dev:cloud`) | Needs internet | Use `npm run dev` (local mode) instead |
 | Convex dashboard (dashboard.convex.dev) | Web-based tool | Use CLI commands instead: `npx convex run ...` |
@@ -371,7 +371,7 @@ npx convex env set JWKS '<paste the JWKS JSON>'
 # 3. Set the admin API key (must match your shell's ADMIN_API_KEY)
 npx convex env set ADMIN_API_KEY "your-admin-key"
 
-# 4. (Production only) GitHub OAuth credentials
+# 4. (Production only) OAuth credentials
 npx convex env set AUTH_GITHUB_ID "your-github-client-id"
 npx convex env set AUTH_GITHUB_SECRET "your-github-client-secret"
 ```

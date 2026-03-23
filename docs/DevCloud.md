@@ -13,7 +13,7 @@ Developing **Here** with Convex's cloud dev backend — the differences from loc
 5. [Running in Cloud Dev Mode](#running-in-cloud-dev-mode)
 6. [Switching Between Local and Cloud](#switching-between-local-and-cloud)
 7. [Environment Variables](#environment-variables)
-8. [GitHub OAuth Setup](#github-oauth-setup)
+8. [OAuth Setup](#oauth-setup)
 9. [User & Data Management](#user--data-management)
 10. [Differences from Local Dev](#differences-from-local-dev)
 11. [Troubleshooting](#troubleshooting)
@@ -43,7 +43,7 @@ Local mode:                          Cloud mode:
 | Offline / airplane | Local (`npm run dev`) |
 | Multi-device testing | Cloud (`npm run dev:cloud`) |
 | Sharing a dev build with others | Cloud (`npm run dev:cloud`) |
-| Testing production auth (GitHub OAuth) | Cloud (`npm run dev:cloud`) |
+| Testing production auth (OAuth) | Cloud (`npm run dev:cloud`) |
 | Testing real-time multiplayer across machines | Cloud (`npm run dev:cloud`) |
 | CI / staging environment | Cloud (deployed) |
 
@@ -238,13 +238,13 @@ Required for: `manage-users.mjs`, `admin-run.mjs`, `backup-world.mjs`, `restore-
 
 ---
 
-## GitHub OAuth Setup
+## OAuth Setup
 
-GitHub OAuth requires a GitHub OAuth App with the correct callback URL for your cloud deployment.
+OAuth requires the configured provider to match the callback URL for your cloud deployment.
 
 ### 1. Create or update the OAuth App
 
-Go to [GitHub Developer Settings > OAuth Apps](https://github.com/settings/developers).
+Go to the OAuth provider's developer settings and create or update the app.
 
 - **Homepage URL:** `http://localhost:5173` (for dev) or your production domain
 - **Authorization callback URL:** `https://charming-cod-198.convex.site/api/auth/callback/github`
@@ -258,9 +258,9 @@ npx convex env set AUTH_GITHUB_SECRET -- "your-github-client-secret"
 
 ### 3. Verify
 
-The "Sign in with GitHub" button appears when `VITE_CONVEX_URL` is not `localhost`. In cloud dev mode, the frontend URL is still `localhost:5173`, but the Convex URL is the cloud one — so GitHub sign-in should appear if your `AuthScreen` checks the Convex URL rather than the page URL. If it doesn't appear, you can still use email/password auth.
+The OAuth sign-in button appears when `VITE_CONVEX_URL` is not `localhost`. In cloud dev mode, the frontend URL is still `localhost:5173`, but the Convex URL is the cloud one — so the OAuth path should appear if your `AuthScreen` checks the Convex URL rather than the page URL. If it doesn't appear, you can still use email/password auth.
 
-> **Note:** If you have both a local and cloud GitHub OAuth App, make sure the callback URLs match the correct deployment. Each deployment needs its own OAuth App (or you update the callback URL when switching).
+> **Note:** If you have both a local and cloud OAuth app, make sure the callback URLs match the correct deployment. Each deployment needs its own app (or you update the callback URL when switching).
 
 ---
 

@@ -1,6 +1,6 @@
 # Authentication & Permissions
 
-User authentication and permission model for **Here** — linking real users to profiles, scoping map ownership, and supporting local development, password auth, and production GitHub OAuth.
+User authentication and permission model for **Here** — linking real users to profiles, scoping map ownership, and supporting local development, password auth, and optional production OAuth.
 
 ---
 
@@ -26,7 +26,7 @@ Authentication uses [`@convex-dev/auth`](https://labs.convex.dev/auth) with two 
 | Provider | Use case | How it works |
 |----------|----------|--------------|
 | **Password** | Multi-user testing, production | Email + password (Scrypt-hashed). Supports sign-up and sign-in flows. |
-| **GitHub OAuth** | Production | Redirects to GitHub, exchanges code for session tokens. |
+| **OAuth** | Optional production auth | Redirects through the configured OAuth provider and exchanges code for session tokens. |
 Both create proper user sessions in the `users` / `authSessions` tables, so downstream code (profile ownership, permissions) works identically regardless of provider.
 
 ---
@@ -41,7 +41,7 @@ Both create proper user sessions in the `users` / `authSessions` tables, so down
 - Two flows: `signUp` (creates account) and `signIn` (validates credentials)
 - No email verification required (can be added later via the `verify` option)
 
-### GitHub OAuth (`@auth/core/providers/github`)
+### OAuth provider (`@auth/core/providers/github`)
 
 - Standard OAuth 2.0 with PKCE
 - Requires `AUTH_GITHUB_ID` and `AUTH_GITHUB_SECRET` env vars on the Convex backend
@@ -61,10 +61,10 @@ Both create proper user sessions in the `users` / `authSessions` tables, so down
 6. App transitions to profile picker (scoped to this user)
 ```
 
-### GitHub OAuth (production)
+### OAuth callback flow (production)
 
 ```
-1. User clicks "Sign in with GitHub"
+1. User clicks the OAuth sign-in button
 2. AuthManager calls signIn action → gets redirect URL + PKCE verifier
 3. Browser redirects to GitHub → user authorizes → redirected back
 4. AuthScreen.init() detects OAuth callback code in URL
