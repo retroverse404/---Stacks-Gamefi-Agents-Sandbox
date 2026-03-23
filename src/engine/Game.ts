@@ -1,4 +1,4 @@
-import { Application, Container } from "pixi.js";
+import { Application, Container, Graphics, Text, TextStyle } from "pixi.js";
 import { Camera } from "./Camera.ts";
 import { MapRenderer } from "./MapRenderer.ts";
 import { EntityLayer } from "./EntityLayer.ts";
@@ -145,6 +145,14 @@ type PremiumVideoPayload = {
   pauseWorldMusic: boolean;
 };
 
+type PremiumMarkerEntry = {
+  container: Container;
+  halo: Graphics;
+  gem: Graphics;
+  label: Text;
+  objectKey: string;
+};
+
 function parseJsonObject<T>(json: string | undefined): T | null {
   if (!json) return null;
   try {
@@ -257,6 +265,8 @@ export class Game {
     { lastTriggeredAt: number; lastResolvedAt?: number; triggeredCount: number }
   >();
   private semanticPromptEl: HTMLDivElement | null = null;
+  private premiumMarkerLayer: Container | null = null;
+  private premiumMarkers = new Map<string, PremiumMarkerEntry>();
   private premiumPanelEl: HTMLDivElement | null = null;
   private premiumVideoOverlayEl: HTMLDivElement | null = null;
   private premiumVideoMusicSnapshot: MusicPlaybackSnapshot | null = null;
@@ -297,6 +307,11 @@ export class Game {
     this.worldItemLayer = new WorldItemLayer();
     this.entityLayer = new EntityLayer(this);
     this.worldUiLayer = this.entityLayer.worldUiContainer;
+    this.premiumMarkerLayer = new Container();
+    this.premiumMarkerLayer.label = "premium-markers";
+    this.premiumMarkerLayer.zIndex = 68;
+    this.premiumMarkerLayer.sortableChildren = true;
+    this.worldUiLayer.addChild(this.premiumMarkerLayer);
 
     // Add layers to stage
     // Order: map base -> worldItems -> objects -> entities -> map overlays -> world UI
@@ -1118,6 +1133,7 @@ export class Game {
     );
 
     // Update camera follow target first.
+    this.updatePremiumMarkers();
     this.camera.update();
 
     // In build mode, allow panning with keyboard.
@@ -1631,9 +1647,108 @@ export class Game {
             metadata,
           } satisfies SemanticInteractable;
         });
+      this.syncPremiumMarkers();
     } catch (err) {
       console.warn("Failed to load semantic interactables:", err);
       this.semanticInteractables = [];
+      this.syncPremiumMarkers();
+    }
+  }
+
+  private isPremiumWaypoint(object: SemanticInteractable) {
+    return (
+      typeof object.x === "number" &&
+      typeof object.y === "number" &&
+      object.metadata.trigger === "interact" &&
+      Boolean(object.metadata.premiumOfferKey) &&
+      Array.isArray(object.metadata.paidActions) &&
+      object.metadata.paidActions.length > 0
+    );
+  }
+
+  private syncPremiumMarkers() {
+    const layer = this.premiumMarkerLayer;
+    if (!layer) return;
+
+    for (const marker of this.premiumMarkers.values()) {
+      marker.container.removeFromParent();
+      marker.container.destroy({ children: true });
+    }
+    this.premiumMarkers.clear();
+
+    for (const object of this.semanticInteractables) {
+      if (!this.isPremiumWaypoint(object) || typeof object.x !== "number" || typeof object.y !== "number") {
+        continue;
+      }
+
+      const container = new Container();
+      container.x = object.x;
+      container.y = object.y - 38;
+      container.zIndex = Math.round(object.y);
+
+      const halo = new Graphics();
+      halo.circle(0, 0, 18);
+      halo.fill({ color: 0xf5b23c, alpha: 0.12 });
+      halo.circle(0, 0, 10);
+      halo.stroke({ color: 0xf4d27a, alpha: 0.92, width: 2 });
+
+      const gem = new Graphics();
+      gem.moveTo(0, -11);
+      gem.lineTo(9, 0);
+      gem.lineTo(0, 11);
+      gem.lineTo(-9, 0);
+      gem.closePath();
+      gem.fill({ color: 0xf0b63d, alpha: 0.96 });
+      gem.stroke({ color: 0x2d1900, alpha: 0.55, width: 2 });
+
+      const label = new Text({
+        text: "PREMIUM",
+        style: new TextStyle({
+          fontSize: 9,
+          fill: 0xfbf1cc,
+          fontFamily: "Inter, sans-serif",
+          fontWeight: "700",
+          letterSpacing: 1.2,
+          stroke: { color: 0x1b1104, width: 3 },
+        }),
+      });
+      label.anchor.set(0.5, 1);
+      label.y = -18;
+
+      container.addChild(halo, gem, label);
+      layer.addChild(container);
+      this.premiumMarkers.set(object.objectKey, {
+        container,
+        halo,
+        gem,
+        label,
+        objectKey: object.objectKey,
+      });
+    }
+  }
+
+  private updatePremiumMarkers() {
+    if (this.premiumMarkers.size === 0) return;
+
+    const now = performance.now();
+    for (const object of this.semanticInteractables) {
+      const marker = this.premiumMarkers.get(object.objectKey);
+      if (!marker || typeof object.x !== "number" || typeof object.y !== "number") continue;
+
+      const distance = Math.hypot(
+        object.x - this.entityLayer.playerX,
+        object.y - this.entityLayer.playerY,
+      );
+      const pulse = 0.88 + Math.sin(now / 380 + object.x / 97) * 0.12;
+      const nearby = distance < 180;
+
+      marker.container.x = object.x;
+      marker.container.y = object.y - 38 + Math.sin(now / 420 + object.y / 71) * 2.5;
+      marker.container.alpha = nearby ? 1 : 0.78;
+      marker.halo.scale.set(pulse);
+      marker.halo.alpha = nearby ? 0.34 : 0.22;
+      marker.gem.scale.set(nearby ? 1.08 : 1);
+      marker.label.text = nearby ? "[X] PREMIUM" : "PREMIUM";
     }
   }
 
@@ -2795,6 +2910,14 @@ export class Game {
       document.removeEventListener("keydown", this.overlayKeyHandler);
       this.overlayKeyHandler = null;
     }
+    for (const marker of this.premiumMarkers.values()) {
+      marker.container.removeFromParent();
+      marker.container.destroy({ children: true });
+    }
+    this.premiumMarkers.clear();
+    this.premiumMarkerLayer?.removeFromParent();
+    this.premiumMarkerLayer?.destroy({ children: true });
+    this.premiumMarkerLayer = null;
     this.premiumPanelEl?.remove();
     this.premiumPanelEl = null;
     this.closePremiumVideoOverlay(false);
