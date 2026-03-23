@@ -232,6 +232,7 @@ export class Game {
   private resizeObserver: ResizeObserver | null = null;
   private initialized = false;
   private unlockHandler: (() => void) | null = null;
+  private overlayKeyHandler: ((e: KeyboardEvent) => void) | null = null;
 
   // Multiplayer
   private presenceTimer: ReturnType<typeof setInterval> | null = null;
@@ -331,12 +332,26 @@ export class Game {
     document.addEventListener("click", this.unlockHandler);
     document.addEventListener("keydown", this.unlockHandler);
 
-    // Mute toggle with M key
-    document.addEventListener("keydown", (e) => {
+    // Overlay dismissal and mute toggle
+    this.overlayKeyHandler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (this.premiumVideoOverlayEl) {
+          e.preventDefault();
+          this.closePremiumVideoOverlay(true);
+          return;
+        }
+        if (this.premiumPanelEl) {
+          e.preventDefault();
+          this.closePremiumInteractionPanel();
+          return;
+        }
+      }
+
       if (e.key === "m" || e.key === "M") {
         this.audio.toggleMute();
       }
-    });
+    };
+    document.addEventListener("keydown", this.overlayKeyHandler);
 
     this.initialized = true;
 
@@ -2775,6 +2790,10 @@ export class Game {
     if (this.unlockHandler) {
       document.removeEventListener("click", this.unlockHandler);
       document.removeEventListener("keydown", this.unlockHandler);
+    }
+    if (this.overlayKeyHandler) {
+      document.removeEventListener("keydown", this.overlayKeyHandler);
+      this.overlayKeyHandler = null;
     }
     this.premiumPanelEl?.remove();
     this.premiumPanelEl = null;
