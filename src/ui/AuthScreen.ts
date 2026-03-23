@@ -148,12 +148,6 @@ export class AuthScreen {
     support.innerHTML = "A sandbox for simulated worlds,<br>AI agents, wallets and transactions.";
     brandBlock.appendChild(support);
 
-    const disclaimer = document.createElement("div");
-    disclaimer.className = "auth-disclaimer";
-    disclaimer.textContent =
-      "* Educational R&D preview. Not financial, investment, or speculative advice.";
-    brandBlock.appendChild(disclaimer);
-
     const card = document.createElement("div");
     card.className = "auth-card";
 
@@ -307,6 +301,15 @@ export class AuthScreen {
       guestWrap.appendChild(guestBtn);
       content.appendChild(guestWrap);
     }
+
+    const footer = document.createElement("div");
+    footer.className = "auth-footer";
+    const disclaimer = document.createElement("div");
+    disclaimer.className = "auth-disclaimer";
+    disclaimer.textContent =
+      "* Educational R&D preview. Not financial, investment, or speculative advice.";
+    footer.appendChild(disclaimer);
+    this.el.appendChild(footer);
 
     // Check for OAuth callback first, then existing session
     this.init();

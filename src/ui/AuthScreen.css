@@ -72,6 +72,18 @@
   margin: 0 auto;
 }
 
+.auth-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px;
+  pointer-events: none;
+}
+
 .auth-brand-block {
   width: min(100%, var(--auth-copy-width));
   display: flex;
@@ -159,12 +171,13 @@
 }
 
 .auth-disclaimer {
-  margin-top: 10px;
+  max-width: min(560px, calc(100vw - 32px));
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.7rem;
   line-height: 1.5;
-  text-align: left;
+  text-align: center;
   text-wrap: balance;
+  pointer-events: auto;
 }
 
 /* Card */
@@ -563,6 +576,16 @@
     line-height: 1.4;
   }
 
+  .auth-footer {
+    bottom: 10px;
+    padding: 0 12px;
+  }
+
+  .auth-disclaimer {
+    font-size: 0.66rem;
+    line-height: 1.35;
+  }
+
   .auth-btn {
     padding: 13px 16px; /* larger touch target */
   }
@@ -584,5 +607,9 @@
 
   .auth-card {
     padding: 18px 14px;
+  }
+
+  .auth-footer {
+    bottom: 8px;
   }
 }

@@ -23,6 +23,7 @@ export class AuthManager {
   private refreshToken: string | null = null;
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
   private storageHandler: ((e: StorageEvent) => void) | null = null;
+  private messageHandler: ((e: MessageEvent) => void) | null = null;
   private _onAuthChange: (() => void) | null = null;
 
   constructor(client: ConvexClient) {
@@ -45,6 +46,13 @@ export class AuthManager {
       this.reloadTokensFromStorage();
     };
     window.addEventListener("storage", this.storageHandler);
+
+    this.messageHandler = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type !== "stackshub:auth-complete") return;
+      this.reloadTokensFromStorage();
+    };
+    window.addEventListener("message", this.messageHandler);
   }
 
   /** Whether the user has a stored auth token */
@@ -103,7 +111,19 @@ export class AuthManager {
         this.setTokens(result.tokens.token, result.tokens.refreshToken);
         // Clean up URL and verifier
         localStorage.removeItem(VERIFIER_KEY);
+        try {
+          window.opener?.postMessage({ type: "stackshub:auth-complete" }, window.location.origin);
+        } catch {
+          // Ignore postMessage failures; storage sync still handles the handoff.
+        }
         window.history.replaceState({}, "", "/");
+        window.setTimeout(() => {
+          try {
+            window.close();
+          } catch {
+            // If the browser blocks close(), keep the callback page usable.
+          }
+        }, 0);
         return true;
       }
     } catch (err) {
@@ -185,6 +205,10 @@ export class AuthManager {
     if (this.storageHandler) {
       window.removeEventListener("storage", this.storageHandler);
       this.storageHandler = null;
+    }
+    if (this.messageHandler) {
+      window.removeEventListener("message", this.messageHandler);
+      this.messageHandler = null;
     }
   }
 
