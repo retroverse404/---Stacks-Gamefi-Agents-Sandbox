@@ -186,6 +186,12 @@ export class AgentsPanel {
     this.listEl = document.createElement("div");
     this.listEl.className = "agents-panel-list";
     this.listEl.innerHTML = `<div class="agents-panel-empty">Loading runtime cast...</div>`;
+    this.listEl.addEventListener("wheel", (event) => {
+      event.stopPropagation();
+    });
+    this.listEl.addEventListener("touchmove", (event) => {
+      event.stopPropagation();
+    });
 
     this.panel.append(header, this.summaryEl, this.railsEl, this.flowEl, this.listEl);
     this.el.appendChild(this.panel);
