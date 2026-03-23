@@ -233,4 +233,5 @@ offline for extended periods, run `npm run db:compact` periodically.
 - `docs/Auth.md` — auth and permissions model
 - `docs/5.3Codex.md` — architecture critique + remediation tracking
 - `docs/deploymet.md` — deployment workflow (Vercel + Convex + x402)
+- `docs/Release-System.md` — ownership map and sync loop for GitHub/Vercel/Render/Convex
 - `submission/demo-checklist.md` — judge/demo evidence checklist

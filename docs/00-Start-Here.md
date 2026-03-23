@@ -27,6 +27,7 @@ Read these in order:
 12. [Agent-Wallet-Ledger.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Agent-Wallet-Ledger.md)
 13. [Agent-Wallet-Architecture.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Agent-Wallet-Architecture.md)
 14. [Operations.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Operations.md)
+15. [Release-System.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Release-System.md)
 
 ## Codex Session Logs
 
