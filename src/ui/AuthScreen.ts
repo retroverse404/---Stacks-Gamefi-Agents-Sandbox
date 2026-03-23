@@ -253,7 +253,7 @@ export class AuthScreen {
     // GitHub OAuth
     // -----------------------------------------------------------------------
     const githubEnabled = getAuthManager().isGitHubAuthEnabled();
-    const showGitHubAuth = true; // always render the block so users know the option exists
+    const showGitHubAuth = false; // keep judge-facing auth flow on password + wallet only
 
     if (showGitHubAuth) {
       const divider1 = document.createElement("div");
