@@ -736,6 +736,10 @@ export class Game {
   private bootstrapInitialWorldState(mapName: string) {
     void (async () => {
       try {
+        // Wake the hosted x402 service as soon as the world boots so paid
+        // interactions do not spend the user's first click waiting on cold start.
+        void this.warmX402Service();
+
         // Start subscriptions immediately so live state arrives while warmups run.
         this.subscribeToMapObjects(mapName);
         this.subscribeToWorldItems(mapName);

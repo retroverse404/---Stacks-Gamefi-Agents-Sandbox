@@ -1169,6 +1169,8 @@ export class EntityLayer {
     const lastAt = this.recentNpcGreetingAt.get(npc.id) ?? 0;
     if (now - lastAt < 12_000) return;
 
+    // Keep proximity chatter readable by showing only one NPC greeting at a time.
+    this.hideNpcSpeechExcept(npc);
     npc.faceToward(this.playerX, this.playerY);
     npc.showSpeech(this.getNpcGreetingLine(npc), 8_000);
     this.recentNpcGreetingAt.set(npc.id, now);
@@ -1180,6 +1182,15 @@ export class EntityLayer {
         prompt: "press-e-dialogue",
       }),
     });
+  }
+
+  private hideNpcSpeechExcept(owner: NPC | null) {
+    for (const other of this.npcs) {
+      if (owner && other.id === owner.id) continue;
+      if (other.hasVisibleSpeech()) {
+        other.hideSpeech();
+      }
+    }
   }
 
   private getNpcGreetingLine(npc: NPC) {
