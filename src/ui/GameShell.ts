@@ -197,6 +197,7 @@ export class GameShell {
     this.el.appendChild(this.hud.el);
     this.hud.setNowPlaying(game.getCurrentMusicCredit());
     this.hud.subscribeRuntimePolicy();
+    game.onPresenceSummaryChange = (summary) => this.hud?.setPresenceStatus(summary);
     this.startSessionHud();
 
     if (import.meta.env.DEV) {

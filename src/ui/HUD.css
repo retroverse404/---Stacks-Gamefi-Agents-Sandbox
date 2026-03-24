@@ -49,6 +49,42 @@
   white-space: nowrap;
 }
 
+.hud-presence-card {
+  flex-shrink: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 132px;
+  padding: 9px 14px 10px;
+  border: 1px solid rgba(121, 198, 170, 0.2);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(18, 34, 28, 0.9) 0%, rgba(13, 19, 18, 0.94) 100%);
+  color: rgba(229, 255, 242, 0.94);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+}
+
+.hud-presence-card-label {
+  color: rgba(220, 255, 239, 0.96);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+
+.hud-presence-card-meta {
+  color: rgba(171, 235, 209, 0.74);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .hud-ticker {
   min-width: 0;
   flex: 1;
@@ -227,6 +263,16 @@
     order: 4;
     width: 100%;
     padding: 6px 10px;
+  }
+
+  .hud-presence-card {
+    order: 4;
+    width: 100%;
+    padding: 6px 10px;
+  }
+
+  .hud-agents-button {
+    order: 5;
   }
 
   .hud-ticker-item {

@@ -153,6 +153,12 @@ type PremiumMarkerEntry = {
   objectKey: string;
 };
 
+type PresenceSummary = {
+  totalOthers: number;
+  nearbyOthers: number;
+  names: string[];
+};
+
 function parseJsonObject<T>(json: string | undefined): T | null {
   if (!json) return null;
   try {
@@ -232,6 +238,7 @@ export class Game {
   /** The current player profile (from Convex) */
   profile: ProfileData;
   currentMapName = "Cozy Cabin";  // overwritten by profile's mapName on init
+  onPresenceSummaryChange: ((summary: PresenceSummary) => void) | null = null;
 
   /** True when the player is an unauthenticated guest (read-only mode) */
   get isGuest() { return this.profile.role === "guest"; }
@@ -1305,6 +1312,7 @@ export class Game {
           lastSeen: p.lastSeen,
         }));
         this.entityLayer.updatePresence(mapped, profileId);
+        this.onPresenceSummaryChange?.(this.summarizePresence(mapped, String(profileId)));
       },
       (err) => {
         console.warn("Presence subscription error:", err);
@@ -1339,6 +1347,28 @@ export class Game {
     // Best-effort: fire-and-forget cleanup
     convex.mutation(api.presence.remove, { profileId }).catch(() => {});
   };
+
+  private summarizePresence(presenceList: PresenceData[], localProfileId: string): PresenceSummary {
+    const playerPos = this.entityLayer.getPlayerPosition();
+    const others = presenceList
+      .filter((entry) => entry.profileId !== localProfileId)
+      .map((entry) => {
+        const dx = entry.x - playerPos.x;
+        const dy = entry.y - playerPos.y;
+        return {
+          ...entry,
+          distanceSq: dx * dx + dy * dy,
+        };
+      })
+      .sort((a, b) => a.distanceSq - b.distanceSq);
+
+    const nearbyThresholdSq = 96 * 96;
+    return {
+      totalOthers: others.length,
+      nearbyOthers: others.filter((entry) => entry.distanceSq <= nearbyThresholdSq).length,
+      names: others.map((entry) => entry.name),
+    };
+  }
 
   private stopPresence() {
     if (this.presenceTimer) {

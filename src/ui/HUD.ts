@@ -26,6 +26,12 @@ type HudAgentStats = {
   executionReady: number;
 };
 
+type HudPresenceSummary = {
+  totalOthers: number;
+  nearbyOthers: number;
+  names: string[];
+};
+
 function formatAgeLabel(ageMs?: number | null) {
   if (typeof ageMs !== "number" || !Number.isFinite(ageMs) || ageMs < 0) return "";
   const minutes = Math.floor(ageMs / 60000);
@@ -44,6 +50,8 @@ export class HUD {
   private tickerSource: HTMLElement;
   private nowPlayingEl: HTMLElement;
   private nowPlayingMeta: HTMLElement;
+  private presenceCard: HTMLElement;
+  private presenceMeta: HTMLElement;
   private agentsButton: HTMLButtonElement;
   private unsub: (() => void) | null = null;
   private policyUnsub: (() => void) | null = null;
@@ -68,6 +76,15 @@ export class HUD {
     this.sessionTimerEl.className = "hud-session-timer";
     this.sessionTimerEl.style.display = "none";
     this.topRow.appendChild(this.sessionTimerEl);
+
+    this.presenceCard = document.createElement("div");
+    this.presenceCard.className = "hud-presence-card";
+    this.presenceCard.innerHTML = `
+      <span class="hud-presence-card-label">Shared Room</span>
+      <span class="hud-presence-card-meta">solo</span>
+    `;
+    this.presenceMeta = this.presenceCard.querySelector(".hud-presence-card-meta") as HTMLElement;
+    this.topRow.appendChild(this.presenceCard);
 
     this.agentsButton = document.createElement("button");
     this.agentsButton.className = "hud-agents-button";
@@ -159,6 +176,27 @@ export class HUD {
       <span class="hud-agents-button-label">Guild Ledger</span>
       <span class="hud-agents-button-meta">${stats.total} cast · ${stats.executionReady} exec</span>
     `;
+  }
+
+  setPresenceStatus(summary: HudPresenceSummary) {
+    const { totalOthers, nearbyOthers, names } = summary;
+    if (totalOthers <= 0) {
+      this.presenceMeta.textContent = "solo";
+      return;
+    }
+
+    const visibleNames = names.slice(0, 2);
+    const remaining = Math.max(0, totalOthers - visibleNames.length);
+    const namesLabel = visibleNames.length > 0
+      ? `${visibleNames.join(", ")}${remaining > 0 ? ` +${remaining}` : ""}`
+      : `${totalOthers} live`;
+
+    if (nearbyOthers > 0) {
+      this.presenceMeta.textContent = `${nearbyOthers} nearby · ${namesLabel}`;
+      return;
+    }
+
+    this.presenceMeta.textContent = `${totalOthers} live · ${namesLabel}`;
   }
 
   private subscribeTicker() {
