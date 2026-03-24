@@ -496,8 +496,11 @@ export class GameShell {
         offer.network === "mainnet" ? "mainnet" : "testnet",
         undefined,
         {
-          onWalletHandoff: (providerLabel) => {
-            controls.status.textContent = `Approve the session payment in ${providerLabel}. Check the browser wallet popup and come back once it is signed.`;
+          onWalletFlowStart: (phase, providerLabel) => {
+            controls.status.textContent =
+              phase === "connect"
+                ? `Continue the session payment in ${providerLabel ?? "your browser wallet"}. Complete the wallet connection step, then come back here.`
+                : `Approve the session payment in ${providerLabel ?? "your browser wallet"}. Check the browser wallet popup and come back once it is signed.`;
             this.sessionPaywallEl?.classList.add("is-wallet-handoff");
             const cardEl = this.sessionPaywallEl?.querySelector(".game-session-paywall-card");
             cardEl?.classList.add("is-wallet-handoff");

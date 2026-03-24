@@ -41,7 +41,7 @@ interface PaymentPayloadV2 {
 }
 
 type X402FetchOptions = {
-  onWalletHandoff?: (providerLabel: string) => void;
+  onWalletFlowStart?: (phase: "connect" | "sign", providerLabel?: string) => void;
 };
 
 export const X402_HEADERS = {
@@ -118,7 +118,7 @@ function formatWalletNetworkRetryMessage(network: AppNetwork, error: unknown) {
   return `${message} Reconnect a wallet on ${expectedNetwork} and retry the payment.`;
 }
 
-async function connectWalletForPayment(network: AppNetwork) {
+async function connectWalletForPayment(network: AppNetwork, options?: X402FetchOptions) {
   const cachedProviderId = getCachedStacksProviderId() ?? undefined;
   const attempts = [
     { providerId: cachedProviderId },
@@ -127,9 +127,17 @@ async function connectWalletForPayment(network: AppNetwork) {
   ];
 
   let lastMismatchError: unknown = null;
+  let didNotifyConnectStart = false;
 
   for (const attempt of attempts) {
     try {
+      if (!didNotifyConnectStart) {
+        options?.onWalletFlowStart?.(
+          "connect",
+          attempt.providerId ? formatStacksProvider(attempt.providerId) : undefined,
+        );
+        didNotifyConnectStart = true;
+      }
       return await connectStacksWallet(network, attempt);
     } catch (error) {
       if (!isWalletNetworkMismatch(error, network)) {
@@ -217,7 +225,7 @@ async function signX402Payment(
   const { bytesToHex } = await import("@stacks/common");
   const { makeUnsignedSTXTokenTransfer } = await import("@stacks/transactions");
   const paymentNetwork = resolvePaymentNetwork(accepted.network, network);
-  const account = await connectWalletForPayment(paymentNetwork);
+  const account = await connectWalletForPayment(paymentNetwork, options);
 
   const unsignedTx = await makeUnsignedSTXTokenTransfer({
     publicKey: account.publicKey,
@@ -231,7 +239,7 @@ async function signX402Payment(
 
   let signResult: { transaction?: string };
   try {
-    options?.onWalletHandoff?.(formatStacksProvider(account.providerId));
+    options?.onWalletFlowStart?.("sign", formatStacksProvider(account.providerId));
     signResult = await signStacksTransaction(txHex, account.providerId);
   } catch (error: any) {
     if (
