@@ -276,6 +276,23 @@ function pointInZone(point: { x: number; y: number }, zone: { x: number; y: numb
   return point.x >= zone.x && point.x <= zone.x + zone.width && point.y >= zone.y && point.y <= zone.y + zone.height;
 }
 
+function roleSpatialLens(roleKey: string) {
+  switch (roleKey) {
+    case "guide":
+      return "Bias toward educational surfaces, newcomer wayfinding, and clear explanations of nearby anchors.";
+    case "market":
+      return "Bias toward prices, trade surfaces, liquidity cues, and any nearby sign of movement or demand.";
+    case "quests":
+      return "Bias toward opportunities, bounties, boards, and any nearby path a player could take next.";
+    case "curator":
+      return "Bias toward editorial interpretation, premium surfaces, objects worth attention, and the emotional tone of the room.";
+    case "merchant":
+      return "Bias toward tavern commerce, small trades, social cues, and items worth bartering.";
+    default:
+      return "Bias toward the nearest meaningful surface in the room and stay grounded in place.";
+  }
+}
+
 // ─── Internal query: recent world events ────────────────────────────────────
 
 export const recentEventsQuery = internalQuery({
@@ -807,6 +824,7 @@ export const agentThinkAction = internalAction({
 
     if (spatialContext) {
       const lines: string[] = [];
+      lines.push(roleSpatialLens(roleKey));
       if (spatialContext.agentState) {
         const pos = spatialContext.agentState;
         lines.push(
