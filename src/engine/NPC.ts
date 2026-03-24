@@ -120,6 +120,7 @@ export class NPC {
 
   // Interaction
   private _showPrompt = false;
+  private proximityFocus = false;
 
   constructor(config: NPCConfig) {
     this.id = config.id;
@@ -229,7 +230,13 @@ export class NPC {
 
   /** Called every frame. Pass a collision checker (px,py) => blocked */
   update(dt: number, isBlocked?: (px: number, py: number) => boolean) {
-    if (this.serverDriven) {
+    if (this.proximityFocus) {
+      if (this.serverDriven) {
+        this.stopWalkAnim();
+      } else if (this.state === "walking") {
+        this.stopWalkAnim();
+      }
+    } else if (this.serverDriven) {
       this.updateServerDriven(dt);
     } else {
       this.updateLocalAI(dt, isBlocked);
@@ -247,6 +254,10 @@ export class NPC {
 
   /** Server-driven: interpolate toward server position */
   private updateServerDriven(dt: number) {
+    if (this.proximityFocus) {
+      return;
+    }
+
     const now = performance.now();
     const elapsed = (now - this.serverTime) / 1000;
 
@@ -313,6 +324,10 @@ export class NPC {
 
   /** Local wander AI (original logic, only used when !serverDriven) */
   private updateLocalAI(dt: number, isBlocked?: (px: number, py: number) => boolean) {
+    if (this.proximityFocus) {
+      return;
+    }
+
     this.stateTimer -= dt;
 
     if (this.stateTimer <= 0) {
@@ -418,6 +433,25 @@ export class NPC {
 
     // Face the player when they're close
     // (We'll handle this from EntityLayer with the player's relative position)
+  }
+
+  setProximityFocus(enabled: boolean, px: number, py: number) {
+    if (this.proximityFocus === enabled) {
+      if (enabled) {
+        this.faceToward(px, py);
+      }
+      return;
+    }
+
+    this.proximityFocus = enabled;
+    if (enabled) {
+      this.faceToward(px, py);
+      this.stopWalkAnim();
+    } else if (this.serverDriven) {
+      this.setDirection(this.direction);
+    } else if (this.state === "idle") {
+      this.stopWalkAnim();
+    }
   }
 
   /** Turn to face a point (the player) */

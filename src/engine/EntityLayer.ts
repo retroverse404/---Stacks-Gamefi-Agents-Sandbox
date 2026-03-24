@@ -655,7 +655,14 @@ export class EntityLayer {
       this.updateNPCInteraction(input);
     }
 
-    // NPCs always wander (even during dialogue, for ambiance)
+    // NPCs near the player should pause and face them instead of wandering through the interaction.
+    const npcAttentionRadius = NPC_INTERACT_RADIUS * 2.4;
+    for (const npc of this.npcs) {
+      const dist = npc.distanceTo(this.playerX, this.playerY);
+      npc.setProximityFocus(dist <= npcAttentionRadius, this.playerX, this.playerY);
+    }
+
+    // NPCs wander outside the interaction radius for ambiance.
     const collisionCheck = (px: number, py: number) => this.isBlocked(px, py);
     for (const npc of this.npcs) {
       npc.update(dt, collisionCheck);

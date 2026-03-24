@@ -700,7 +700,7 @@ export const ensureDemoNpc = mutation({
         frameWidth: 32,
         frameHeight: 48,
         npcSpeed: 22,
-        npcWanderRadius: 80,
+        npcWanderRadius: 28,
         npcDirDown: "row0",
         npcDirUp: "row1",
         npcDirRight: "row2",
@@ -713,7 +713,7 @@ export const ensureDemoNpc = mutation({
       melSpriteDef = await ctx.db.get(spriteDefId);
     } else if (
       melSpriteDef.spriteSheetUrl !== "/assets/characters/villager2.json" ||
-      melSpriteDef.npcWanderRadius !== 80 ||
+      melSpriteDef.npcWanderRadius !== 28 ||
       melSpriteDef.npcDirUp !== "row1" ||
       melSpriteDef.npcDirLeft !== "row3" ||
       melSpriteDef.npcDirRight !== "row2" ||
@@ -721,7 +721,7 @@ export const ensureDemoNpc = mutation({
     ) {
       await ctx.db.patch(melSpriteDef._id, {
         spriteSheetUrl: "/assets/characters/villager2.json",
-        npcWanderRadius: 80,
+        npcWanderRadius: 28,
         npcDirDown: "row0",
         npcDirUp: "row1",
         npcDirRight: "row2",
@@ -1130,8 +1130,8 @@ export const ensureDemoNpc = mutation({
 
     let melObject = existingObjects.find((o) => o.instanceName === MEL_INSTANCE) ?? undefined;
     if (!melObject) {
-      const tileX = 18;
-      const tileY = 13;
+      const tileX = 21;
+      const tileY = 10;
       const objectId = await ctx.db.insert("mapObjects", {
         mapName: targetMap,
         spriteDefName: MEL_SPRITE_DEF,
@@ -1143,15 +1143,15 @@ export const ensureDemoNpc = mutation({
       });
       melObject = (await ctx.db.get(objectId)) ?? undefined;
     } else if (
-      melObject.x !== 18 * resolvedMap.tileWidth + resolvedMap.tileWidth / 2 ||
-      melObject.y !== 13 * resolvedMap.tileHeight + resolvedMap.tileHeight ||
+      melObject.x !== 21 * resolvedMap.tileWidth + resolvedMap.tileWidth / 2 ||
+      melObject.y !== 10 * resolvedMap.tileHeight + resolvedMap.tileHeight ||
       melObject.layer !== 1 ||
       melObject.spriteDefName !== MEL_SPRITE_DEF
     ) {
       await ctx.db.patch(melObject._id, {
         spriteDefName: MEL_SPRITE_DEF,
-        x: 18 * resolvedMap.tileWidth + resolvedMap.tileWidth / 2,
-        y: 13 * resolvedMap.tileHeight + resolvedMap.tileHeight,
+        x: 21 * resolvedMap.tileWidth + resolvedMap.tileWidth / 2,
+        y: 10 * resolvedMap.tileHeight + resolvedMap.tileHeight,
         layer: 1,
         updatedAt: now,
       });
