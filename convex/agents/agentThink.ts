@@ -258,6 +258,24 @@ function parseJsonObject(value: string | undefined): Record<string, unknown> {
   }
 }
 
+function parseStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function distancePx(a: { x: number; y: number }, b: { x: number; y: number }) {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function formatDistance(distance: number) {
+  return `${Math.round(distance)}px`;
+}
+
+function pointInZone(point: { x: number; y: number }, zone: { x: number; y: number; width: number; height: number }) {
+  return point.x >= zone.x && point.x <= zone.x + zone.width && point.y >= zone.y && point.y <= zone.y + zone.height;
+}
+
 // ─── Internal query: recent world events ────────────────────────────────────
 
 export const recentEventsQuery = internalQuery({
@@ -348,6 +366,200 @@ export const castQuery = internalQuery({
     return registry
       .filter((r) => r.status === "active" && (!mapName || r.homeMap === mapName))
       .map((r) => ({ agentId: r.agentId, displayName: r.displayName, roleKey: r.roleKey }));
+  },
+});
+
+export const spatialContextQuery = internalQuery({
+  args: {
+    agentId: v.string(),
+    mapName: v.optional(v.string()),
+  },
+  handler: async (ctx, { agentId, mapName }) => {
+    const [mapInfo, npcStates, semanticObjects, zones, roles, registry, presence] = await Promise.all([
+      mapName
+        ? ctx.db.query("maps").withIndex("by_name", (q) => q.eq("name", mapName)).first()
+        : Promise.resolve(null),
+      mapName
+        ? ctx.db.query("npcState").withIndex("by_map", (q) => q.eq("mapName", mapName)).collect()
+        : ctx.db.query("npcState").collect(),
+      mapName
+        ? ctx.db.query("semanticObjects").withIndex("by_map", (q) => q.eq("mapName", mapName)).collect()
+        : ctx.db.query("semanticObjects").collect(),
+      mapName
+        ? ctx.db.query("worldZones").withIndex("by_map", (q) => q.eq("mapName", mapName)).collect()
+        : ctx.db.query("worldZones").collect(),
+      mapName
+        ? ctx.db.query("npcRoleAssignments").withIndex("by_map_roleKey", (q) => q.eq("mapName", mapName)).collect()
+        : ctx.db.query("npcRoleAssignments").collect(),
+      mapName
+        ? ctx.db.query("agentRegistry").collect().then((rows) => rows.filter((row) => row.homeMap === mapName))
+        : ctx.db.query("agentRegistry").collect(),
+      mapName
+        ? ctx.db.query("presence").withIndex("by_map", (q) => q.eq("mapName", mapName)).collect()
+      : ctx.db.query("presence").collect(),
+    ]);
+
+    const roleAssignment = roles.find((row) => row.agentId === agentId) ?? null;
+    const registryEntry = registry.find((row) => row.agentId === agentId) ?? null;
+    const agentState = npcStates.find((row) => row.instanceName === agentId) ?? null;
+    const origin = agentState ? { x: agentState.x, y: agentState.y } : null;
+    const roleMeta = parseJsonObject(roleAssignment?.metadataJson);
+    const roleAnchorKeys = [
+      typeof roleMeta.anchorObjectKey === "string" ? roleMeta.anchorObjectKey : null,
+      typeof roleAssignment?.postObjectKey === "string" ? roleAssignment.postObjectKey : null,
+      ...parseStringArray(roleMeta.routeObjectKeys),
+    ].filter((value): value is string => Boolean(value));
+    const anchorKeySet = new Set(roleAnchorKeys);
+
+    const zone = origin && mapInfo
+      ? zones.find((candidate) => {
+          const tilePoint = {
+            x: origin.x / mapInfo.tileWidth,
+            y: origin.y / mapInfo.tileHeight,
+          };
+          return pointInZone(tilePoint, candidate);
+        }) ?? null
+      : null;
+
+    const semanticObjectsByKey = new Map(semanticObjects.map((object) => [object.objectKey, object]));
+    const nearbySemanticObjects = origin
+      ? semanticObjects
+          .map((object) => {
+            const point = typeof object.x === "number" && typeof object.y === "number"
+              ? { x: object.x, y: object.y }
+              : null;
+            const distance = point && origin ? distancePx(origin, point) : null;
+            return {
+              object,
+              distance,
+              anchor: anchorKeySet.has(object.objectKey),
+            };
+          })
+          .filter((entry) => entry.distance !== null && entry.distance <= 420)
+          .sort((a, b) => {
+            const anchorWeightA = a.anchor ? 0 : 1;
+            const anchorWeightB = b.anchor ? 0 : 1;
+            if (anchorWeightA !== anchorWeightB) return anchorWeightA - anchorWeightB;
+            return (a.distance ?? 0) - (b.distance ?? 0);
+          })
+          .slice(0, 6)
+          .map((entry) => ({
+            objectKey: entry.object.objectKey,
+            label: entry.object.label,
+            roomLabel: entry.object.roomLabel ?? null,
+            zoneKey: entry.object.zoneKey ?? null,
+            valueClass: entry.object.valueClass ?? null,
+            triggerType: entry.object.triggerType ?? null,
+            affordances: entry.object.affordances,
+            distancePx: entry.distance !== null ? Math.round(entry.distance) : null,
+            anchor: entry.anchor,
+          }))
+      : [];
+
+    const nearbyPlayers = origin
+      ? presence
+          .map((row) => ({
+            name: row.name,
+            direction: row.direction,
+            animation: row.animation,
+            distance: distancePx(origin, { x: row.x, y: row.y }),
+          }))
+          .filter((row) => row.distance <= 360)
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, 4)
+          .map((row) => ({
+            name: row.name,
+            direction: row.direction,
+            animation: row.animation,
+            distancePx: Math.round(row.distance),
+          }))
+      : [];
+
+    const nearbyNpcs = origin
+      ? npcStates
+          .filter((row) => row.instanceName !== agentId)
+          .map((row) => {
+            const point = { x: row.x, y: row.y };
+            const distance = distancePx(origin, point);
+            const registryRow = registry.find((candidate) => candidate.agentId === row.instanceName) ?? null;
+            return {
+              agentId: row.instanceName ?? null,
+              displayName: registryRow?.displayName ?? row.instanceName ?? row.spriteDefName,
+              roleKey: registryRow?.roleKey ?? null,
+              currentIntent: row.currentIntent ?? null,
+              mood: row.mood ?? null,
+              distance,
+            };
+          })
+          .filter((row) => row.distance <= 420)
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, 4)
+          .map((row) => ({
+            agentId: row.agentId,
+            displayName: row.displayName,
+            roleKey: row.roleKey,
+            currentIntent: row.currentIntent,
+            mood: row.mood,
+            distancePx: Math.round(row.distance),
+          }))
+      : [];
+
+    return {
+      agentState: agentState
+        ? {
+            x: agentState.x,
+            y: agentState.y,
+            direction: agentState.direction,
+            currentIntent: agentState.currentIntent ?? null,
+            mood: agentState.mood ?? null,
+            spawnX: agentState.spawnX,
+            spawnY: agentState.spawnY,
+            wanderRadius: agentState.wanderRadius,
+          }
+        : null,
+      roleAssignment: roleAssignment
+        ? {
+            roleKey: roleAssignment.roleKey,
+            behaviorMode: roleAssignment.behaviorMode ?? null,
+            homeZoneKey: roleAssignment.homeZoneKey ?? null,
+            postObjectKey: roleAssignment.postObjectKey ?? null,
+            displayRole: roleAssignment.displayRole ?? null,
+            metadataJson: roleAssignment.metadataJson ?? null,
+          }
+        : null,
+      registryEntry: registryEntry
+        ? {
+            displayName: registryEntry.displayName,
+            roleKey: registryEntry.roleKey,
+            homeZoneKey: registryEntry.homeZoneKey ?? null,
+            homeMap: registryEntry.homeMap ?? null,
+          }
+        : null,
+      zone: zone
+        ? {
+            zoneKey: zone.zoneKey,
+            name: zone.name,
+            zoneType: zone.zoneType,
+            accessType: zone.accessType ?? null,
+            tags: zone.tags,
+          }
+        : null,
+      nearbySemanticObjects,
+      nearbyPlayers,
+      nearbyNpcs,
+      roleAnchors: roleAnchorKeys.map((objectKey) => {
+        const object = semanticObjectsByKey.get(objectKey);
+        return object
+          ? {
+              objectKey,
+              label: object.label,
+              roomLabel: object.roomLabel ?? null,
+              zoneKey: object.zoneKey ?? null,
+              valueClass: object.valueClass ?? null,
+            }
+          : { objectKey, label: objectKey, roomLabel: null, zoneKey: null, valueClass: null };
+      }),
+    };
   },
 });
 
@@ -500,11 +712,12 @@ export const agentThinkAction = internalAction({
     if (!activeViewer) return;
 
     // Gather context in parallel
-    const [recentEvents, memory, cast, knowledgeFacts] = await Promise.all([
+    const [recentEvents, memory, cast, knowledgeFacts, spatial] = await Promise.all([
       ctx.runQuery((internal as any).agents.agentThink.recentEventsQuery, { mapName, limit: 8 }),
       ctx.runQuery((internal as any).agents.agentThink.agentMemoryQuery, { agentId }),
       ctx.runQuery((internal as any).agents.agentThink.castQuery, { mapName }),
       ctx.runQuery((internal as any).agents.agentThink.knowledgeFactsQuery, { mapName, limit: 5 }),
+      ctx.runQuery((internal as any).agents.agentThink.spatialContextQuery, { agentId, mapName }),
     ]);
 
     // Filter out epoch heartbeats — only meaningful events
@@ -525,6 +738,134 @@ export const agentThinkAction = internalAction({
       .map((c) => c.displayName)
       .join(", ");
     if (peers) contextParts.push(`Other agents present: ${peers}`);
+
+    const spatialContext = spatial as {
+      agentState: {
+        x: number;
+        y: number;
+        direction: string;
+        currentIntent: string | null;
+        mood: string | null;
+        spawnX: number;
+        spawnY: number;
+        wanderRadius: number;
+      } | null;
+      roleAssignment: {
+        roleKey: string;
+        behaviorMode: string | null;
+        homeZoneKey: string | null;
+        postObjectKey: string | null;
+        displayRole: string | null;
+        metadataJson: string | null;
+      } | null;
+      registryEntry: {
+        displayName: string;
+        roleKey: string;
+        homeZoneKey: string | null;
+        homeMap: string | null;
+      } | null;
+      zone: {
+        zoneKey: string;
+        name: string;
+        zoneType: string;
+        accessType: string | null;
+        tags: string[];
+      } | null;
+      nearbySemanticObjects: Array<{
+        objectKey: string;
+        label: string;
+        roomLabel: string | null;
+        zoneKey: string | null;
+        valueClass: string | null;
+        triggerType: string | null;
+        affordances: string[];
+        distancePx: number | null;
+        anchor: boolean;
+      }>;
+      nearbyPlayers: Array<{
+        name: string;
+        direction: string;
+        animation: string;
+        distancePx: number;
+      }>;
+      nearbyNpcs: Array<{
+        agentId: string | null;
+        displayName: string;
+        roleKey: string | null;
+        currentIntent: string | null;
+        mood: string | null;
+        distancePx: number;
+      }>;
+      roleAnchors: Array<{
+        objectKey: string;
+        label: string;
+        roomLabel: string | null;
+        zoneKey: string | null;
+        valueClass: string | null;
+      }>;
+    } | null;
+
+    if (spatialContext) {
+      const lines: string[] = [];
+      if (spatialContext.agentState) {
+        const pos = spatialContext.agentState;
+        lines.push(
+          `You are at (${Math.round(pos.x)}, ${Math.round(pos.y)}) facing ${pos.direction}. ` +
+            `Spawn: (${Math.round(pos.spawnX)}, ${Math.round(pos.spawnY)}). ` +
+            `Mood: ${pos.mood ?? "unknown"}. Intent: ${pos.currentIntent ?? "unknown"}.`,
+        );
+      }
+      if (spatialContext.zone) {
+        lines.push(
+          `Current zone: ${spatialContext.zone.name} (${spatialContext.zone.zoneType})` +
+            (spatialContext.zone.accessType ? `, access ${spatialContext.zone.accessType}` : ""),
+        );
+      }
+      if (spatialContext.roleAnchors.length > 0) {
+        lines.push(
+          "Role anchors: " +
+            spatialContext.roleAnchors
+              .slice(0, 4)
+              .map((anchor) => `${anchor.label}${anchor.roomLabel ? ` [${anchor.roomLabel}]` : ""}`)
+              .join(", "),
+        );
+      }
+      if (spatialContext.nearbySemanticObjects.length > 0) {
+        lines.push(
+          "Nearby semantic objects:\n" +
+            spatialContext.nearbySemanticObjects
+              .slice(0, 5)
+              .map((object) => {
+                const tags = [
+                  object.roomLabel ? object.roomLabel : null,
+                  object.valueClass ? object.valueClass : null,
+                  object.triggerType ? object.triggerType : null,
+                ].filter(Boolean).join(" · ");
+                return `  - ${object.label}${object.distancePx !== null ? ` (${formatDistance(object.distancePx)})` : ""}${tags ? ` — ${tags}` : ""}`;
+              })
+              .join("\n"),
+        );
+      }
+      if (spatialContext.nearbyPlayers.length > 0) {
+        lines.push(
+          "Nearby visitors:\n" +
+            spatialContext.nearbyPlayers
+              .map((visitor) => `  - ${visitor.name} (${formatDistance(visitor.distancePx)}) facing ${visitor.direction}`)
+              .join("\n"),
+        );
+      }
+      if (spatialContext.nearbyNpcs.length > 0) {
+        lines.push(
+          "Nearby NPCs:\n" +
+            spatialContext.nearbyNpcs
+              .map((npc) => `  - ${npc.displayName}${npc.roleKey ? ` (${npc.roleKey})` : ""} (${formatDistance(npc.distancePx)})`)
+              .join("\n"),
+        );
+      }
+      if (lines.length > 0) {
+        contextParts.push(`Spatial context:\n${lines.join("\n")}`);
+      }
+    }
 
     // Recent world activity
     if (meaningfulEvents.length > 0) {
