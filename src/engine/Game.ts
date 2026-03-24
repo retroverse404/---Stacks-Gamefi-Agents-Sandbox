@@ -2459,10 +2459,23 @@ export class Game {
     };
 
     const connectWalletFromPanel = async (providerId: StacksWalletProviderId) => {
+      const handoffControls = {
+        overlay,
+        card,
+        status,
+        body,
+        confirmBtn,
+        cancelBtn,
+        requestId,
+      };
       setWalletButtonsDisabled(true);
-      status.textContent = `Opening ${formatStacksProvider(providerId)} on Stacks testnet…`;
+      this.transitionPremiumPanelToWalletPrompt(
+        handoffControls,
+        formatStacksProvider(providerId),
+      );
+      status.textContent = `Connect ${formatStacksProvider(providerId)} on Stacks testnet`;
       body.textContent =
-        "Approve the wallet connection request in the extension. Once connected, the premium action button will unlock.";
+        "Finish the wallet connection request in the browser wallet window. Once connected, this premium action will unlock.";
       try {
         const account = await connectStacksWallet("testnet", {
           forceWalletSelect: true,
@@ -2470,8 +2483,10 @@ export class Game {
         });
         walletAddress = account.address;
         walletProviderId = account.providerId;
+        this.restorePremiumPanelFromWalletPrompt(handoffControls);
         syncWalletUi();
       } catch (error) {
+        this.restorePremiumPanelFromWalletPrompt(handoffControls);
         status.textContent = "Wallet connection failed.";
         body.textContent = getErrorMessage(error);
       } finally {
