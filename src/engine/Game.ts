@@ -272,6 +272,7 @@ export class Game {
   private premiumVideoMusicSnapshot: MusicPlaybackSnapshot | null = null;
   private premiumInteractionPending = false;
   private premiumInteractionRequestId = 0;
+  private x402WarmupPromise: Promise<void> | null = null;
 
   // Live NPC state subscription
   private npcStateUnsub: (() => void) | null = null;
@@ -2095,6 +2096,7 @@ export class Game {
         return;
       }
 
+      void this.warmX402Service();
       this.showPremiumInteractionPanel(object, offer);
     } catch (error) {
       console.warn("Premium interactable lookup failed:", error);
@@ -2305,7 +2307,7 @@ export class Game {
     `;
 
     const status = document.createElement("div");
-    status.textContent = "Ready to request payment.";
+    status.textContent = "Payment service warming up.";
     status.style.cssText = `
       font-size: 13px;
       color: rgba(255,255,255,0.7);
@@ -2313,7 +2315,8 @@ export class Game {
     `;
 
     const body = document.createElement("div");
-    body.textContent = "Payment is part of this world interaction. Approve the wallet request only if you want the premium unlock.";
+    body.textContent =
+      "Payment is part of this world interaction. The payment service may take a moment to wake up, then your wallet prompt will appear if it is available.";
     body.style.cssText = `
       font-size: 14px;
       line-height: 1.55;
@@ -2386,6 +2389,25 @@ export class Game {
     this.premiumPanelEl?.remove();
     this.premiumPanelEl = null;
     this.premiumInteractionPending = false;
+  }
+
+  private warmX402Service() {
+    if (this.x402WarmupPromise) {
+      return this.x402WarmupPromise;
+    }
+
+    this.x402WarmupPromise = fetch(resolveX402Url("/health"), {
+      cache: "no-store",
+    })
+      .then(() => undefined)
+      .catch((error) => {
+        console.warn("x402 warmup failed:", error);
+      })
+      .finally(() => {
+        this.x402WarmupPromise = null;
+      });
+
+    return this.x402WarmupPromise;
   }
 
   private resolvePremiumVideoPayload(
@@ -2613,7 +2635,7 @@ export class Game {
     controls.confirmBtn.disabled = true;
     controls.status.textContent = "Waiting for x402 challenge and wallet approval…";
     controls.body.textContent =
-      "The game is requesting the premium payment flow from the mapped offer. If your wallet opens, approve the transaction to continue.";
+      "The game is requesting the premium payment flow from the mapped offer. If the payment service is cold, keep this panel open while it wakes up.";
 
     const offerMeta = parseJsonObject<PremiumOfferMeta>(offer.metadataJson) ?? {};
     const network = resolveOfferNetwork(offer.network);
