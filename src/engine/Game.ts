@@ -736,46 +736,31 @@ export class Game {
   private bootstrapInitialWorldState(mapName: string) {
     void (async () => {
       try {
-        await withTimeout(this.loadPlacedObjects(mapName), BACKGROUND_BOOT_TIMEOUT_MS, "placed objects");
-      } catch (error) {
-        console.warn("Initial placed object bootstrap timed out:", error);
-      }
-      this.subscribeToMapObjects(mapName);
+        // Start subscriptions immediately so live state arrives while warmups run.
+        this.subscribeToMapObjects(mapName);
+        this.subscribeToWorldItems(mapName);
+        this.subscribeToNpcState(mapName);
+        this.subscribeToAgentChatter(mapName);
 
-      try {
-        await withTimeout(this.loadWorldItems(mapName), BACKGROUND_BOOT_TIMEOUT_MS, "world items");
-      } catch (error) {
-        console.warn("Initial world item bootstrap timed out:", error);
-      }
-      this.subscribeToWorldItems(mapName);
-
-      try {
-        await withTimeout(
-          this.loadSemanticInteractables(mapName),
-          BACKGROUND_BOOT_TIMEOUT_MS,
-          "semantic interactables",
-        );
-      } catch (error) {
-        console.warn("Initial semantic interactable bootstrap timed out:", error);
-      }
-
-      try {
-        await withTimeout(this.loadSpriteDefs(), BACKGROUND_BOOT_TIMEOUT_MS, "sprite definitions");
-      } catch (error) {
-        console.warn("Initial sprite definition bootstrap timed out:", error);
-      }
-      this.subscribeToNpcState(mapName);
-      this.subscribeToAgentChatter(mapName);
-
-      try {
         const convex = getConvexClient();
-        await withTimeout(
-          convex.mutation(api.npcEngine.ensureLoop, {}),
-          BACKGROUND_BOOT_TIMEOUT_MS,
-          "npc loop bootstrap",
-        );
+
+        await Promise.allSettled([
+          withTimeout(this.loadPlacedObjects(mapName), BACKGROUND_BOOT_TIMEOUT_MS, "placed objects"),
+          withTimeout(this.loadWorldItems(mapName), BACKGROUND_BOOT_TIMEOUT_MS, "world items"),
+          withTimeout(
+            this.loadSemanticInteractables(mapName),
+            BACKGROUND_BOOT_TIMEOUT_MS,
+            "semantic interactables",
+          ),
+          withTimeout(this.loadSpriteDefs(), BACKGROUND_BOOT_TIMEOUT_MS, "sprite definitions"),
+          withTimeout(
+            convex.mutation(api.npcEngine.ensureLoop, {}),
+            BACKGROUND_BOOT_TIMEOUT_MS,
+            "npc loop bootstrap",
+          ),
+        ]);
       } catch (error) {
-        console.warn("NPC ensureLoop failed during bootstrap:", error);
+        console.warn("World bootstrap warmup failed:", error);
       }
     })();
   }
