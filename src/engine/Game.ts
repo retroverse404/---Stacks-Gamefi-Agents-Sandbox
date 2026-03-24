@@ -2394,6 +2394,8 @@ export class Game {
     `;
     confirmBtn.addEventListener("click", () => {
       void this.runPremiumInteractableFlow(object, offer, {
+        overlay,
+        card,
         status,
         body,
         confirmBtn,
@@ -2652,6 +2654,8 @@ export class Game {
     object: SemanticInteractable,
     offer: PremiumOfferRecord,
     controls: {
+      overlay: HTMLDivElement;
+      card: HTMLDivElement;
       status: HTMLDivElement;
       body: HTMLDivElement;
       confirmBtn: HTMLButtonElement;
@@ -2674,6 +2678,15 @@ export class Game {
       const result = await x402Fetch<Record<string, unknown>>(
         resolveX402Url(offer.endpointPath || ""),
         network,
+        undefined,
+        {
+          onWalletHandoff: (providerLabel) => {
+            if (controls.requestId !== this.premiumInteractionRequestId || !this.premiumPanelEl) {
+              return;
+            }
+            this.transitionPremiumPanelToWalletPrompt(controls, providerLabel);
+          },
+        },
       );
       if (controls.requestId !== this.premiumInteractionRequestId || !this.premiumPanelEl) {
         return;
@@ -2733,6 +2746,7 @@ export class Game {
         return;
       }
       console.warn("Premium interactable flow failed:", error);
+      this.restorePremiumPanelFromWalletPrompt(controls);
       controls.status.textContent = "Premium unlock failed.";
       controls.body.textContent =
         error instanceof X402RequestError
@@ -2746,6 +2760,65 @@ export class Game {
         this.premiumInteractionPending = false;
       }
     }
+  }
+
+  private transitionPremiumPanelToWalletPrompt(
+    controls: {
+      overlay: HTMLDivElement;
+      card: HTMLDivElement;
+      status: HTMLDivElement;
+      body: HTMLDivElement;
+      confirmBtn: HTMLButtonElement;
+      cancelBtn: HTMLButtonElement;
+      requestId: number;
+    },
+    providerLabel: string,
+  ) {
+    controls.overlay.style.background = "rgba(6,10,16,0.12)";
+    controls.overlay.style.alignItems = "flex-start";
+    controls.overlay.style.justifyContent = "flex-end";
+    controls.overlay.style.padding = "78px 18px 18px";
+    controls.overlay.style.pointerEvents = "none";
+
+    controls.card.style.width = "min(320px, calc(100vw - 24px))";
+    controls.card.style.padding = "14px";
+    controls.card.style.borderColor = "rgba(121,198,170,0.28)";
+    controls.card.style.boxShadow = "0 14px 34px rgba(0,0,0,0.28)";
+    controls.card.style.pointerEvents = "auto";
+
+    controls.status.textContent = `Approve payment in ${providerLabel}`;
+    controls.body.textContent =
+      `The request was handed to ${providerLabel}. Check the wallet popup near the browser toolbar and approve or reject it there.`;
+    controls.body.style.minHeight = "0";
+    controls.confirmBtn.style.display = "none";
+    controls.cancelBtn.textContent = "Dismiss";
+  }
+
+  private restorePremiumPanelFromWalletPrompt(
+    controls: {
+      overlay: HTMLDivElement;
+      card: HTMLDivElement;
+      status: HTMLDivElement;
+      body: HTMLDivElement;
+      confirmBtn: HTMLButtonElement;
+      cancelBtn: HTMLButtonElement;
+      requestId: number;
+    },
+  ) {
+    controls.overlay.style.background = "rgba(6,10,16,0.64)";
+    controls.overlay.style.alignItems = "center";
+    controls.overlay.style.justifyContent = "center";
+    controls.overlay.style.padding = "20px";
+    controls.overlay.style.pointerEvents = "auto";
+
+    controls.card.style.width = "min(480px, calc(100vw - 32px))";
+    controls.card.style.padding = "18px";
+    controls.card.style.borderColor = "rgba(255,255,255,0.12)";
+    controls.card.style.boxShadow = "0 24px 60px rgba(0,0,0,0.36)";
+    controls.card.style.pointerEvents = "auto";
+
+    controls.confirmBtn.style.display = "";
+    controls.cancelBtn.textContent = "Close";
   }
 
   private formatPremiumInteractionResult(result: Record<string, unknown>) {
