@@ -37,6 +37,7 @@ import "./GameShell.css";
 
 type PremiumOfferRecord = {
   offerKey: string;
+  agentId?: string;
   title: string;
   description: string;
   priceAsset: string;
@@ -46,8 +47,53 @@ type PremiumOfferRecord = {
   status: string;
 };
 
+type SessionContinuationMetadata = {
+  name?: string;
+  description?: string;
+  network?: string;
+  asset?: string;
+  priceStx?: number;
+  resource?: string;
+  status?: string;
+};
+
 function formatSessionOfferPrice(offer: PremiumOfferRecord) {
   return `${offer.priceAmount} ${offer.priceAsset}`;
+}
+
+async function fetchSessionContinuationOfferFallback(): Promise<PremiumOfferRecord | null> {
+  try {
+    const response = await fetch(resolveX402Url("/api/premium/session/continue/metadata"), {
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const metadata = (await response.json()) as SessionContinuationMetadata;
+    const endpointPath =
+      typeof metadata.resource === "string" && metadata.resource.trim().length > 0
+        ? metadata.resource
+        : "/api/premium/session/continue";
+    const priceAmount =
+      typeof metadata.priceStx === "number" && Number.isFinite(metadata.priceStx)
+        ? String(metadata.priceStx)
+        : "1";
+
+    return {
+      offerKey: APP_SESSION_CONTINUATION_OFFER_KEY,
+      agentId: "stackshub-session",
+      title: metadata.name || "Continue live dungeon session",
+      description:
+        metadata.description ||
+        "After the free sandbox preview, pay to extend your live session and keep interacting with the world.",
+      priceAsset: metadata.asset || "STX",
+      priceAmount,
+      network: metadata.network || "testnet",
+      endpointPath,
+      status: metadata.status || "active",
+    };
+  } catch (error) {
+    console.warn("Failed to load session continuation metadata fallback:", error);
+    return null;
+  }
 }
 
 function getUiErrorMessage(error: unknown) {
@@ -369,6 +415,10 @@ export class GameShell {
       })) as PremiumOfferRecord | null;
     } catch (error) {
       console.warn("Failed to load session continuation offer:", error);
+    }
+
+    if (!offer || !offer.endpointPath) {
+      offer = await fetchSessionContinuationOfferFallback();
     }
 
     if (!offer || !offer.endpointPath) {

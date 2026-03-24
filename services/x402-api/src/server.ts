@@ -21,7 +21,7 @@ const marketPremiumPrice = Number(process.env.MARKET_PREMIUM_PRICE_STX || "0.001
 const melPremiumPrice = Number(
   process.env.MEL_PREMIUM_PRICE_STX || guidePremiumPrice.toString(),
 );
-const sessionContinuationPrice = Number(process.env.SESSION_CONTINUATION_PRICE_STX || "10");
+const sessionContinuationPrice = Number(process.env.SESSION_CONTINUATION_PRICE_STX || "1");
 const network = networkName === "mainnet" ? "mainnet" : "testnet";
 const marketNetworkName = (process.env.MARKET_NETWORK || networkName).toLowerCase();
 const marketNetwork = marketNetworkName === "testnet" ? "testnet" : "mainnet";
