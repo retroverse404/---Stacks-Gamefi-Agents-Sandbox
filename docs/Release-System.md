@@ -2,7 +2,7 @@
 
 Purpose: define the minimum operating system that keeps `stackshub.space`, Render, Convex, and GitHub aligned without guessing.
 
-Last updated: 2026-03-23 12:08:36 IST
+Last updated: 2026-03-24 11:26:00 IST
 
 ## Ownership
 
@@ -32,6 +32,18 @@ Do not call the stack synced until all of these are true:
 - Convex production is deployed if backend code changed
 - the hosted URL has been smoke-tested in a fresh incognito tab
 - the result is written into the timestamped release ledger
+
+## Branch Of Truth
+
+The public build must be served from the same branch that contains the verified fixes.
+
+- Current branch of truth: `release/dungeons-and-agents`
+- Do not assume `main` is safe for production if it is behind the release branch
+- If production is pointed at `main`, either:
+  - switch Vercel production to `release/dungeons-and-agents`, or
+  - merge/cherry-pick the verified release commits into `main` before redeploying
+
+If the live site regresses, verify the deployed asset commit before making new code changes.
 
 ## Required Release Record
 
