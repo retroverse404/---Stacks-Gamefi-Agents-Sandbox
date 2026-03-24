@@ -2,8 +2,10 @@ import {
   connectStacksWallet,
   formatStacksProvider,
   getCachedStacksProviderId,
+  getInstalledStacksProviderIds,
   signStacksTransaction,
   type StacksAppNetwork,
+  type StacksWalletProviderId,
 } from "./stacksWallet.ts";
 
 type AppNetwork = StacksAppNetwork;
@@ -120,10 +122,26 @@ function formatWalletNetworkRetryMessage(network: AppNetwork, error: unknown) {
 
 async function connectWalletForPayment(network: AppNetwork, options?: X402FetchOptions) {
   const cachedProviderId = getCachedStacksProviderId() ?? undefined;
+  const installedProviders = await getInstalledStacksProviderIds();
+  const preferredProviderOrder: StacksWalletProviderId[] = [
+    "LeatherProvider",
+    "XverseProviders.BitcoinProvider",
+    "AsignaProvider",
+    "FordefiProviders.UtxoProvider",
+  ];
+  const orderedInstalledProviders = preferredProviderOrder.filter((providerId) =>
+    installedProviders.includes(providerId),
+  );
+  const uniqueProviderIds = Array.from(
+    new Set([
+      ...(cachedProviderId ? [cachedProviderId] : []),
+      ...orderedInstalledProviders,
+    ]),
+  );
   const attempts = [
-    { providerId: cachedProviderId },
-    ...(cachedProviderId ? [{ forceWalletSelect: true, providerId: cachedProviderId }] : []),
-    { forceWalletSelect: true as const },
+    ...uniqueProviderIds.map((providerId) => ({ providerId })),
+    ...(cachedProviderId ? [{ forceWalletSelect: true as const, providerId: cachedProviderId }] : []),
+    ...(uniqueProviderIds.length === 0 ? [{ forceWalletSelect: true as const }] : []),
   ];
 
   let lastMismatchError: unknown = null;
