@@ -39,11 +39,11 @@ The current demo focuses on:
 - visible payment and proof steps
 - object-triggered and agent-triggered interactions
 
-### Session Paywall UX (judge build)
+### Session Continuation Mechanic
 
-- Free live window: 5 minutes per session.
-- Continuation: pay **1 STX** via x402 to extend the live session by +5 minutes.
-- UX: HUD countdown shows remaining time; when it expires, a continuation overlay prompts the 1 STX payment and resumes the session on success.
+- Free live window target: 5 minutes per session.
+- Prototype continuation path: pay **1 STX** via x402 to extend the live session by +5 minutes.
+- Current strongest proof path: in-world premium interactions and paid quote surfaces, not the session continuation overlay.
 - Purpose: keep the demo controllable and cost-bounded while still proving paid access. Payments are for educational/R&D demonstration, not financial advice.
 
 ## Live Contract Stack
