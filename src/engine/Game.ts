@@ -10,6 +10,14 @@ import { getConvexClient } from "../lib/convexClient.ts";
 import { isLocalConvexUrl } from "../lib/runtimeEnv.ts";
 import { getOrCreateRuntimeViewerId } from "../lib/runtimeSession.ts";
 import { X402RequestError, resolveX402Url, x402Fetch } from "../lib/x402.ts";
+import {
+  connectStacksWallet,
+  formatStacksAddress,
+  formatStacksProvider,
+  getCachedStacksAddress,
+  getCachedStacksProviderId,
+  type StacksWalletProviderId,
+} from "../lib/stacksWallet.ts";
 import { api } from "../../convex/_generated/api";
 import type { AppMode, MapData, Portal, ProfileData, PresenceData } from "./types.ts";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -2245,6 +2253,8 @@ export class Game {
   private showPremiumInteractionPanel(object: SemanticInteractable, offer: PremiumOfferRecord) {
     this.closePremiumInteractionPanel();
     const requestId = ++this.premiumInteractionRequestId;
+    let walletAddress = getCachedStacksAddress();
+    let walletProviderId = getCachedStacksProviderId();
 
     const overlay = document.createElement("div");
     overlay.style.cssText = `
@@ -2308,7 +2318,10 @@ export class Game {
     `;
 
     const status = document.createElement("div");
-    status.textContent = "Payment service warming up.";
+    status.textContent =
+      walletAddress && walletProviderId
+        ? `Wallet ready: ${formatStacksProvider(walletProviderId)} • ${formatStacksAddress(walletAddress)}`
+        : "Connect a testnet wallet before starting this premium action.";
     status.style.cssText = `
       font-size: 13px;
       color: rgba(255,255,255,0.7);
@@ -2317,7 +2330,9 @@ export class Game {
 
     const body = document.createElement("div");
     body.textContent =
-      "Payment is part of this world interaction. The payment service may take a moment to wake up, then your wallet prompt will appear if it is available.";
+      walletAddress && walletProviderId
+        ? "Payment is part of this world interaction. Approve the wallet request only if you want the premium unlock."
+        : "No payer wallet is connected in this browser profile yet. Connect Xverse or Leather first, then continue with the premium unlock.";
     body.style.cssText = `
       font-size: 14px;
       line-height: 1.55;
@@ -2329,6 +2344,53 @@ export class Game {
       min-height: 100px;
       color: rgba(255,255,255,0.86);
     `;
+
+    const walletRow = document.createElement("div");
+    walletRow.style.cssText = `
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.035);
+      border: 1px solid rgba(255,255,255,0.08);
+      flex-wrap: wrap;
+    `;
+
+    const walletInfo = document.createElement("div");
+    walletInfo.style.cssText = `
+      font-size: 12px;
+      color: rgba(255,255,255,0.76);
+      line-height: 1.4;
+      flex: 1 1 220px;
+    `;
+
+    const walletButtons = document.createElement("div");
+    walletButtons.style.cssText = `
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    `;
+
+    const connectButtonStyle = `
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.04);
+      color: #f4f1de;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font: inherit;
+      cursor: pointer;
+    `;
+
+    const connectXverseBtn = document.createElement("button");
+    connectXverseBtn.textContent = "Connect Xverse";
+    connectXverseBtn.style.cssText = connectButtonStyle;
+
+    const connectLeatherBtn = document.createElement("button");
+    connectLeatherBtn.textContent = "Connect Leather";
+    connectLeatherBtn.style.cssText = connectButtonStyle;
 
     const buttonRow = document.createElement("div");
     buttonRow.style.cssText = `
@@ -2375,8 +2437,61 @@ export class Game {
       });
     });
 
+    const syncWalletUi = () => {
+      walletAddress = getCachedStacksAddress();
+      walletProviderId = getCachedStacksProviderId();
+      const connected = Boolean(walletAddress && walletProviderId);
+      walletInfo.textContent = connected
+        ? `Payer wallet connected: ${formatStacksProvider(walletProviderId)} • ${formatStacksAddress(walletAddress!)}`
+        : "No payer wallet connected yet. Connect a testnet wallet to enable this x402 action.";
+      status.textContent = connected
+        ? `Wallet ready: ${formatStacksProvider(walletProviderId)} • ${formatStacksAddress(walletAddress!)}`
+        : "Connect a testnet wallet before starting this premium action.";
+      body.textContent = connected
+        ? "Payment is part of this world interaction. Approve the wallet request only if you want the premium unlock."
+        : "No payer wallet is connected in this browser profile yet. Connect Xverse or Leather first, then continue with the premium unlock.";
+      confirmBtn.disabled = !connected;
+    };
+
+    const setWalletButtonsDisabled = (disabled: boolean) => {
+      connectXverseBtn.disabled = disabled;
+      connectLeatherBtn.disabled = disabled;
+    };
+
+    const connectWalletFromPanel = async (providerId: StacksWalletProviderId) => {
+      setWalletButtonsDisabled(true);
+      status.textContent = `Opening ${formatStacksProvider(providerId)} on Stacks testnet…`;
+      body.textContent =
+        "Approve the wallet connection request in the extension. Once connected, the premium action button will unlock.";
+      try {
+        const account = await connectStacksWallet("testnet", {
+          forceWalletSelect: true,
+          providerId,
+        });
+        walletAddress = account.address;
+        walletProviderId = account.providerId;
+        syncWalletUi();
+      } catch (error) {
+        status.textContent = "Wallet connection failed.";
+        body.textContent = getErrorMessage(error);
+      } finally {
+        setWalletButtonsDisabled(false);
+      }
+    };
+
+    connectXverseBtn.addEventListener("click", () => {
+      void connectWalletFromPanel("XverseProviders.BitcoinProvider");
+    });
+    connectLeatherBtn.addEventListener("click", () => {
+      void connectWalletFromPanel("LeatherProvider");
+    });
+
+    walletButtons.append(connectXverseBtn, connectLeatherBtn);
+    walletRow.append(walletInfo, walletButtons);
+    syncWalletUi();
+
     buttonRow.append(cancelBtn, confirmBtn);
-    card.append(eyebrow, title, description, details, status, body, buttonRow);
+    card.append(eyebrow, title, description, details, walletRow, status, body, buttonRow);
     overlay.appendChild(card);
     overlay.addEventListener("click", (event) => {
       if (event.target === overlay) {
