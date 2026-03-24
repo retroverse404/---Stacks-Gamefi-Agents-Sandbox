@@ -124,8 +124,8 @@ async function connectWalletForPayment(network: AppNetwork, options?: X402FetchO
   const cachedProviderId = getCachedStacksProviderId() ?? undefined;
   const installedProviders = await getInstalledStacksProviderIds();
   const preferredProviderOrder: StacksWalletProviderId[] = [
-    "LeatherProvider",
     "XverseProviders.BitcoinProvider",
+    "LeatherProvider",
     "AsignaProvider",
     "FordefiProviders.UtxoProvider",
   ];
