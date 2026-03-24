@@ -161,6 +161,10 @@ export class HUD {
     `;
   }
 
+  setOverlayFocus(active: boolean) {
+    this.el.classList.toggle("is-overlay-muted", active);
+  }
+
   private subscribeTicker() {
     this.unsub?.();
     if (!teneroApi?.tickerRows) {

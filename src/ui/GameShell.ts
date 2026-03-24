@@ -78,6 +78,7 @@ export class GameShell {
   private sessionHudTimer: ReturnType<typeof setInterval> | null = null;
   private sessionPaywallEl: HTMLDivElement | null = null;
   private sessionPaywallPending = false;
+  private gameOverlayActive = false;
 
   // UI panels
   private hud!: HUD;
@@ -198,6 +199,10 @@ export class GameShell {
     this.hud.setNowPlaying(game.getCurrentMusicCredit());
     this.hud.subscribeRuntimePolicy();
     this.startSessionHud();
+    game.onOverlayFocusChange = (active) => {
+      this.gameOverlayActive = active;
+      this.syncOverlayFocus();
+    };
 
     if (import.meta.env.DEV) {
       this.buildDebugPanel();
@@ -349,6 +354,7 @@ export class GameShell {
 
   private ensureSessionPaywall() {
     if (this.sessionPaywallEl || this.sessionPaywallPending) return;
+    this.game?.dismissBlockingOverlays();
     this.openSessionPaywall().catch((error) => {
       console.warn("Failed to open session continuation paywall:", error);
     });
@@ -437,12 +443,14 @@ export class GameShell {
     overlay.appendChild(card);
     document.body.appendChild(overlay);
     this.sessionPaywallEl = overlay;
+    this.syncOverlayFocus();
   }
 
   private closeSessionPaywall() {
     this.sessionPaywallEl?.remove();
     this.sessionPaywallEl = null;
     this.sessionPaywallPending = false;
+    this.syncOverlayFocus();
   }
 
   private continueWithoutSessionPaywall(controls?: {
@@ -486,6 +494,15 @@ export class GameShell {
       const result = await x402Fetch<Record<string, unknown>>(
         resolveX402Url(offer.endpointPath ?? "/api/premium/session/continue"),
         offer.network === "mainnet" ? "mainnet" : "testnet",
+        undefined,
+        {
+          onWalletHandoff: (providerLabel) => {
+            controls.status.textContent = `Approve the session payment in ${providerLabel}. Check the browser wallet popup and come back once it is signed.`;
+            this.sessionPaywallEl?.classList.add("is-wallet-handoff");
+            const cardEl = this.sessionPaywallEl?.querySelector(".game-session-paywall-card");
+            cardEl?.classList.add("is-wallet-handoff");
+          },
+        },
       );
 
       const paymentTxid =
@@ -508,6 +525,9 @@ export class GameShell {
     } catch (error) {
       const message = getUiErrorMessage(error);
       controls.status.textContent = message;
+      this.sessionPaywallEl?.classList.remove("is-wallet-handoff");
+      const cardEl = this.sessionPaywallEl?.querySelector(".game-session-paywall-card");
+      cardEl?.classList.remove("is-wallet-handoff");
       controls.payBtn.disabled = false;
       controls.reloadBtn.disabled = false;
       if (message.includes("payment service is unavailable")) {
@@ -515,6 +535,10 @@ export class GameShell {
       }
       this.sessionPaywallPending = false;
     }
+  }
+
+  private syncOverlayFocus() {
+    this.hud?.setOverlayFocus(this.gameOverlayActive || Boolean(this.sessionPaywallEl));
   }
 
   destroy() {

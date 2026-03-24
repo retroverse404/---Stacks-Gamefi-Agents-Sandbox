@@ -40,6 +40,10 @@ interface PaymentPayloadV2 {
   };
 }
 
+type X402FetchOptions = {
+  onWalletHandoff?: (providerLabel: string) => void;
+};
+
 export const X402_HEADERS = {
   PAYMENT_REQUIRED: "payment-required",
   PAYMENT_SIGNATURE: "payment-signature",
@@ -204,6 +208,7 @@ async function signX402Payment(
   paymentRequired: PaymentRequiredV2,
   accepted: PaymentRequirementsV2,
   network: AppNetwork,
+  options?: X402FetchOptions,
 ): Promise<string> {
   if (!accepted.payTo) {
     throw new Error("x402 payment request is missing a payTo address.");
@@ -226,6 +231,7 @@ async function signX402Payment(
 
   let signResult: { transaction?: string };
   try {
+    options?.onWalletHandoff?.(formatStacksProvider(account.providerId));
     signResult = await signStacksTransaction(txHex, account.providerId);
   } catch (error: any) {
     if (
@@ -282,6 +288,7 @@ export async function x402Fetch<T>(
   endpointUrl: string,
   network: AppNetwork,
   init?: RequestInit,
+  options?: X402FetchOptions,
 ): Promise<T> {
   const firstResponse = await fetchWithTimeout(endpointUrl, init);
   if (firstResponse.status !== 402) {
@@ -303,7 +310,7 @@ export async function x402Fetch<T>(
     throw new Error("No accepted payment method was returned by the x402 service.");
   }
 
-  const encodedPayload = await signX402Payment(paymentRequired, accepted, network);
+  const encodedPayload = await signX402Payment(paymentRequired, accepted, network, options);
 
   const retryResponse = await fetchWithTimeout(endpointUrl, {
     ...init,
