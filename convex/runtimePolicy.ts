@@ -172,7 +172,10 @@ export async function listActivePlayerPresence(ctx: any, now = Date.now()) {
 export async function listActiveGuestViewerFacts(ctx: any, now = Date.now()) {
   const { guestViewerTtlMs } = getRuntimePolicyConfig();
   const cutoff = now - guestViewerTtlMs;
-  const rows = await ctx.db.query("worldFacts").collect();
+  const rows = await ctx.db
+    .query("worldFacts")
+    .withIndex("by_scope_subject", (q: any) => q.eq("scope", "player"))
+    .collect();
   return rows.filter(
     (row: any) => row.factKey.startsWith(GUEST_VIEWER_FACT_PREFIX) && (row.updatedAt ?? 0) > cutoff,
   );
@@ -417,7 +420,10 @@ export const cleanupStaleGuestViewers = internalMutation({
     const now = Date.now();
     const active = await listActiveGuestViewerFacts(ctx, now);
     const activeFactKeys = new Set(active.map((row: any) => row.factKey));
-    const rows = await ctx.db.query("worldFacts").collect();
+    const rows = await ctx.db
+      .query("worldFacts")
+      .withIndex("by_scope_subject", (q: any) => q.eq("scope", "player"))
+      .collect();
     let deleted = 0;
     for (const row of rows) {
       if (!row.factKey.startsWith(GUEST_VIEWER_FACT_PREFIX)) continue;

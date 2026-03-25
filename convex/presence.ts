@@ -1,6 +1,5 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { internal } from "./_generated/api";
 import { getRequestUserId } from "./lib/getRequestUserId";
 import { assertPlayerCapacity, touchGuestViewer } from "./runtimePolicy";
 
@@ -58,15 +57,6 @@ export const update = mutation({
     } else {
       await ctx.db.insert("presence", data);
     }
-
-    // Restart the NPC tick loop if it has gone dormant (no players were online).
-    const anyNpc = await ctx.db.query("npcState").first();
-    if (anyNpc) {
-      const STALE_MS = 500 * 6; // 6 missed ticks = loop is dead
-      if ((anyNpc.lastTick ?? 0) < Date.now() - STALE_MS) {
-        await ctx.scheduler.runAfter(0, internal.npcEngine.tick, {});
-      }
-    }
   },
 });
 
@@ -90,15 +80,6 @@ export const guestHeartbeat = mutation({
   handler: async (ctx, { mapName, sessionId }) => {
     const now = Date.now();
     await touchGuestViewer(ctx, { sessionId, mapName, now });
-
-    const anyNpc = await ctx.db.query("npcState").first();
-    if (anyNpc) {
-      const STALE_MS = 500 * 6;
-      if ((anyNpc.lastTick ?? 0) < now - STALE_MS) {
-        await ctx.scheduler.runAfter(0, internal.npcEngine.tick, {});
-      }
-    }
-
     return { ok: true, heartbeatAt: now, sessionId };
   },
 });
