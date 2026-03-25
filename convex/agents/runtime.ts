@@ -31,6 +31,53 @@ type RuntimeSnapshot = {
   summary: string;
 };
 
+function sameAgentStatePayload(
+  existing: {
+    agentType?: string;
+    state?: string;
+    mood?: string;
+    currentIntent?: string;
+    memorySummary?: string;
+    contextJson?: string;
+    budgetPolicyJson?: string;
+    lastAiCallAt?: number;
+    nextAiAllowedAt?: number;
+    aiCallsToday?: number;
+    aiWindowStartedAt?: number;
+    transitionsJson?: string;
+  } | null | undefined,
+  payload: {
+    agentType: string;
+    state: string;
+    mood: string;
+    currentIntent: string;
+    memorySummary: string;
+    contextJson: string;
+    budgetPolicyJson: string;
+    lastAiCallAt?: number;
+    nextAiAllowedAt?: number;
+    aiCallsToday: number;
+    aiWindowStartedAt?: number;
+    transitionsJson?: string;
+  },
+): boolean {
+  if (!existing) return false;
+  return (
+    existing.agentType === payload.agentType &&
+    existing.state === payload.state &&
+    existing.mood === payload.mood &&
+    existing.currentIntent === payload.currentIntent &&
+    existing.memorySummary === payload.memorySummary &&
+    existing.contextJson === payload.contextJson &&
+    existing.budgetPolicyJson === payload.budgetPolicyJson &&
+    existing.lastAiCallAt === payload.lastAiCallAt &&
+    existing.nextAiAllowedAt === payload.nextAiAllowedAt &&
+    existing.aiCallsToday === payload.aiCallsToday &&
+    existing.aiWindowStartedAt === payload.aiWindowStartedAt &&
+    existing.transitionsJson === payload.transitionsJson
+  );
+}
+
 function shouldPreserveExistingState(existing: {
   updatedAt?: number;
   lastEpochAt?: number;
@@ -378,12 +425,15 @@ export const runEpoch = internalMutation({
         nextAiAllowedAt: existing?.nextAiAllowedAt,
         aiCallsToday: existing?.aiCallsToday ?? 0,
         aiWindowStartedAt: existing?.aiWindowStartedAt,
-        lastEpochAt: now,
+        lastEpochAt: existing?.lastEpochAt ?? now,
         transitionsJson: existing?.transitionsJson,
         updatedAt: now,
       };
 
-      if (existing) {
+      if (existing && sameAgentStatePayload(existing, payload)) {
+        // Skip no-op row rewrites so autonomous think mutations do not contend
+        // with the periodic epoch loop on the same agentStates documents.
+      } else if (existing) {
         await ctx.db.patch(existing._id, payload);
       } else {
         await ctx.db.insert("agentStates", payload);

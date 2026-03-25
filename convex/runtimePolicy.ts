@@ -3,7 +3,6 @@ import { internalMutation, internalQuery, mutation, query } from "./_generated/s
 import { getRequestUserId } from "./lib/getRequestUserId";
 
 const GUEST_VIEWER_FACT_PREFIX = "guest-viewer:";
-const GUEST_HEARTBEAT_FACT_KEY = "guest-viewer-heartbeat";
 const POLICY_SNAPSHOT_FACT_KEY = "runtime-policy-snapshot";
 const AI_BUDGET_FACT_KEY = "runtime-policy:ai-budget";
 
@@ -32,6 +31,8 @@ type RuntimePolicySnapshot = {
     maxReservedOutputTokensPerWindow: number;
   };
 };
+
+type StoredRuntimePolicySnapshot = RuntimePolicySnapshot;
 
 function readNumberEnv(name: string, fallback: number, min = 0) {
   const env = (globalThis as any)?.process?.env ?? {};
@@ -116,6 +117,31 @@ function parseAiBudgetState(raw: string | undefined, now: number, windowMs: numb
 
 function estimateInputTokens(approximateInputChars: number) {
   return Math.max(1, Math.ceil(Math.max(0, approximateInputChars) / 4));
+}
+
+function parseStoredRuntimePolicySnapshot(raw: string | undefined): StoredRuntimePolicySnapshot | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as StoredRuntimePolicySnapshot;
+  } catch {
+    return null;
+  }
+}
+
+function sameRuntimePolicySnapshot(
+  left: StoredRuntimePolicySnapshot | null,
+  right: RuntimePolicySnapshot,
+): boolean {
+  if (!left) return false;
+  return (
+    left.sessionDurationMs === right.sessionDurationMs &&
+    left.maxConcurrentPlayers === right.maxConcurrentPlayers &&
+    left.maxGuestViewers === right.maxGuestViewers &&
+    left.activePlayers === right.activePlayers &&
+    left.activeGuestViewers === right.activeGuestViewers &&
+    left.totalActiveViewers === right.totalActiveViewers &&
+    JSON.stringify(left.aiBudget) === JSON.stringify(right.aiBudget)
+  );
 }
 
 function buildGuestViewerFactKey(sessionId: string) {
@@ -224,30 +250,6 @@ export async function touchGuestViewer(
   } else {
     await ctx.db.insert("worldFacts", payload);
   }
-
-  const aggregate = await ctx.db
-    .query("worldFacts")
-    .withIndex("by_factKey", (q: any) => q.eq("factKey", GUEST_HEARTBEAT_FACT_KEY))
-    .first();
-  const aggregatePayload = {
-    mapName,
-    factKey: GUEST_HEARTBEAT_FACT_KEY,
-    factType: "status",
-    valueJson: JSON.stringify({
-      lastHeartbeatAt: now,
-      mapName: mapName ?? null,
-      activeGuestSessionId: sessionId,
-    }),
-    scope: "world",
-    source: "runtimePolicy.touchGuestViewer",
-    updatedAt: now,
-  };
-
-  if (aggregate) {
-    await ctx.db.patch(aggregate._id, aggregatePayload);
-  } else {
-    await ctx.db.insert("worldFacts", aggregatePayload);
-  }
 }
 
 async function buildRuntimePolicySnapshot(ctx: any, now = Date.now()): Promise<RuntimePolicySnapshot> {
@@ -279,6 +281,10 @@ async function buildRuntimePolicySnapshot(ctx: any, now = Date.now()): Promise<R
 
 async function upsertRuntimePolicySnapshotFact(ctx: any, snapshot: RuntimePolicySnapshot) {
   const existing = await getPolicySnapshotFact(ctx);
+  const existingSnapshot = parseStoredRuntimePolicySnapshot(existing?.valueJson);
+  if (sameRuntimePolicySnapshot(existingSnapshot, snapshot)) {
+    return existingSnapshot;
+  }
   const payload = {
     mapName: undefined,
     factKey: POLICY_SNAPSHOT_FACT_KEY,
@@ -419,8 +425,6 @@ export const cleanupStaleGuestViewers = internalMutation({
       await ctx.db.delete(row._id);
       deleted += 1;
     }
-
-    await upsertRuntimePolicySnapshotFact(ctx, await buildRuntimePolicySnapshot(ctx, now));
     return { deleted };
   },
 });
