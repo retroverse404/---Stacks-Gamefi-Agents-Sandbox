@@ -762,6 +762,11 @@ export class Game {
             BACKGROUND_BOOT_TIMEOUT_MS,
             "npc loop bootstrap",
           ),
+          withTimeout(
+            convex.mutation((api as any)["agents/runtime"].ensureEpochLoop, { mapName }),
+            BACKGROUND_BOOT_TIMEOUT_MS,
+            "agent loop bootstrap",
+          ),
         ]);
       } catch (error) {
         console.warn("World bootstrap warmup failed:", error);
@@ -967,6 +972,7 @@ export class Game {
 
       // 9) Start NPC loop
       await convex.mutation(api.npcEngine.ensureLoop, {}).catch(() => {});
+      await convex.mutation((api as any)["agents/runtime"].ensureEpochLoop, { mapName: this.currentMapName }).catch(() => {});
 
       // 10) Switch music if the new map has a different track
       this.playMapMusic(mapData);
@@ -1272,10 +1278,18 @@ export class Game {
             sessionId: getOrCreateRuntimeViewerId(),
           })
           .catch((err) => console.warn("Guest heartbeat failed:", err));
+        convex
+          .mutation((api as any)["agents/runtime"].ensureEpochLoop, { mapName: this.currentMapName })
+          .catch((err) => console.warn("Agent loop ensure failed:", err));
       };
       sendGuestHeartbeat();
       this.guestHeartbeatTimer = setInterval(sendGuestHeartbeat, GUEST_HEARTBEAT_INTERVAL_MS);
     }
+
+    void convex.mutation(api.npcEngine.ensureLoop, {}).catch(() => {});
+    void convex
+      .mutation((api as any)["agents/runtime"].ensureEpochLoop, { mapName: this.currentMapName })
+      .catch(() => {});
 
     // 2) Subscribe to presence of others on this map (guests included — read-only)
     this.presenceUnsub = convex.onUpdate(
