@@ -59,9 +59,9 @@ This is the strongest architectural win in the frontend.
 
 Key references:
 
-- [GameShell.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/GameShell.ts)
-- [SplashHost.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/SplashHost.ts)
-- [SplashManager.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/SplashManager.ts)
+- [GameShell.ts](src/ui/GameShell.ts)
+- [SplashHost.ts](src/splash/SplashHost.ts)
+- [SplashManager.ts](src/splash/SplashManager.ts)
 
 ## 2. Backend vs Frontend
 
@@ -102,9 +102,9 @@ Several important overlays are still authored as DOM + inline style systems in T
 
 Examples:
 
-- [GuideNpcSplash.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/GuideNpcSplash.ts)
-- [ShopSplash.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/ShopSplash.ts)
-- [BattleSplash.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/BattleSplash.ts)
+- [GuideNpcSplash.ts](src/splash/screens/GuideNpcSplash.ts)
+- [ShopSplash.ts](src/splash/screens/ShopSplash.ts)
+- [BattleSplash.ts](src/splash/screens/BattleSplash.ts)
 
 This creates three problems:
 
@@ -118,9 +118,9 @@ Many strings are still authored directly inside screen builders.
 
 Examples:
 
-- [ProfileScreen.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ProfileScreen.ts)
-- [AuthScreen.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts)
-- [GuideNpcSplash.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/GuideNpcSplash.ts)
+- [ProfileScreen.ts](src/ui/ProfileScreen.ts)
+- [AuthScreen.ts](src/ui/AuthScreen.ts)
+- [GuideNpcSplash.ts](src/splash/screens/GuideNpcSplash.ts)
 
 This is acceptable for a fast-moving prototype, but it is not ideal for:
 
@@ -147,8 +147,8 @@ Those patterns exist visually, but not as reusable frontend primitives.
 
 Some screens use CSS variables well:
 
-- [AuthScreen.css](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.css)
-- [ProfileScreen.css](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ProfileScreen.css)
+- [AuthScreen.css](src/ui/AuthScreen.css)
+- [ProfileScreen.css](src/ui/ProfileScreen.css)
 
 Other surfaces define their visual system ad hoc inside TS files.
 
@@ -168,8 +168,8 @@ These are the safest frontend replacement boundaries.
 
 Replaceable with relatively low risk:
 
-- [AuthScreen.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts)
-- [ProfileScreen.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ProfileScreen.ts)
+- [AuthScreen.ts](src/ui/AuthScreen.ts)
+- [ProfileScreen.ts](src/ui/ProfileScreen.ts)
 
 These should become the first clean design targets.
 
@@ -177,7 +177,7 @@ These should become the first clean design targets.
 
 Stable controller:
 
-- [GameShell.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/GameShell.ts)
+- [GameShell.ts](src/ui/GameShell.ts)
 
 This should remain the shell controller even if the visual shell is redesigned.
 
@@ -185,8 +185,8 @@ This should remain the shell controller even if the visual shell is redesigned.
 
 Stable interaction container:
 
-- [SplashHost.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/SplashHost.ts)
-- [SplashManager.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/SplashManager.ts)
+- [SplashHost.ts](src/splash/SplashHost.ts)
+- [SplashManager.ts](src/splash/SplashManager.ts)
 
 This is the correct place to preserve behavior while replacing presentation.
 

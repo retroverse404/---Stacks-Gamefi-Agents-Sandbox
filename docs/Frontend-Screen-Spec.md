@@ -30,8 +30,8 @@ App bootstrap
 
 Primary references:
 
-- [App.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/App.ts)
-- [GameShell.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/GameShell.ts)
+- [App.ts](src/App.ts)
+- [GameShell.ts](src/ui/GameShell.ts)
 
 ---
 
@@ -41,8 +41,8 @@ Primary references:
 
 Source:
 
-- [AuthScreen.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts)
-- [AuthScreen.css](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.css)
+- [AuthScreen.ts](src/ui/AuthScreen.ts)
+- [AuthScreen.css](src/ui/AuthScreen.css)
 
 ### Purpose
 
@@ -89,8 +89,8 @@ The design may change completely, but these functions must remain:
 
 Source:
 
-- [ProfileScreen.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ProfileScreen.ts)
-- [ProfileScreen.css](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ProfileScreen.css)
+- [ProfileScreen.ts](src/ui/ProfileScreen.ts)
+- [ProfileScreen.css](src/ui/ProfileScreen.css)
 
 ### Purpose
 
@@ -156,8 +156,8 @@ Preserve:
 
 Source:
 
-- [GameShell.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/GameShell.ts)
-- [GameShell.css](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/GameShell.css)
+- [GameShell.ts](src/ui/GameShell.ts)
+- [GameShell.css](src/ui/GameShell.css)
 
 ### Purpose
 
@@ -185,7 +185,7 @@ Future frontend work should preserve `GameShell` as the shell controller even if
 
 Source:
 
-- [HUD.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/HUD.ts)
+- [HUD.ts](src/ui/HUD.ts)
 
 ### Purpose
 
@@ -213,7 +213,7 @@ This is the safest place to add:
 
 Source:
 
-- [ModeToggle.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ModeToggle.ts)
+- [ModeToggle.ts](src/ui/ModeToggle.ts)
 
 ### Purpose
 
@@ -243,8 +243,8 @@ The visual presentation can change, but the mode model must stay stable unless t
 
 Source:
 
-- [MapBrowser.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/MapBrowser.ts)
-- [MapBrowser.css](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/MapBrowser.css)
+- [MapBrowser.ts](src/ui/MapBrowser.ts)
+- [MapBrowser.css](src/ui/MapBrowser.css)
 
 ### Purpose
 
@@ -279,8 +279,8 @@ This can be redesigned heavily, but map browsing and travel are core system func
 
 Source:
 
-- [GuideNpcSplash.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/GuideNpcSplash.ts)
-- [stacksGuideContext.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/story/content/stacksGuideContext.ts)
+- [GuideNpcSplash.ts](src/splash/screens/GuideNpcSplash.ts)
+- [stacksGuideContext.ts](src/story/content/stacksGuideContext.ts)
 
 ### Purpose
 
@@ -353,11 +353,11 @@ This screen is a high-priority redesign candidate, but it must keep:
 
 Current utility overlays include:
 
-- [ShopSplash.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/ShopSplash.ts)
-- [InventorySplash.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/InventorySplash.ts)
-- [StatusSplash.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/StatusSplash.ts)
-- [BattleSplash.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/BattleSplash.ts)
-- [LoreSplash.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/LoreSplash.ts)
+- [ShopSplash.ts](src/splash/screens/ShopSplash.ts)
+- [InventorySplash.ts](src/splash/screens/InventorySplash.ts)
+- [StatusSplash.ts](src/splash/screens/StatusSplash.ts)
+- [BattleSplash.ts](src/splash/screens/BattleSplash.ts)
+- [LoreSplash.ts](src/splash/screens/LoreSplash.ts)
 
 These are useful as behavior references, but they are visually inconsistent and should not be treated as a finished design system.
 

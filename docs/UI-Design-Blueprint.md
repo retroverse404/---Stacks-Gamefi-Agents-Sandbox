@@ -52,8 +52,8 @@ App bootstrap
 ```
 
 Source references:
-- [App.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/App.ts)
-- [GameShell.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/GameShell.ts)
+- [App.ts](src/App.ts)
+- [GameShell.ts](src/ui/GameShell.ts)
 
 ### Core app states
 
@@ -78,7 +78,7 @@ These are the main UI-facing data objects.
 ### Profile
 
 Source:
-- [types.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/types.ts)
+- [types.ts](src/engine/types.ts)
 
 Key fields:
 - `_id`
@@ -137,7 +137,7 @@ Key fields:
 ### Splash overlay config
 
 Source:
-- [SplashTypes.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/SplashTypes.ts)
+- [SplashTypes.ts](src/splash/SplashTypes.ts)
 
 Key fields:
 - `id`
@@ -149,7 +149,7 @@ Key fields:
 ### App modes
 
 Source:
-- [types.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/types.ts)
+- [types.ts](src/engine/types.ts)
 
 Current modes:
 - `play`
@@ -228,7 +228,7 @@ This is the actual screen inventory to design.
 ## 5.1 Auth Screen
 
 Source:
-- [AuthScreen.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts)
+- [AuthScreen.ts](src/ui/AuthScreen.ts)
 
 ### Purpose
 
@@ -264,7 +264,7 @@ Authenticate or enter as guest.
 ## 5.2 Profile Screen
 
 Source:
-- [ProfileScreen.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ProfileScreen.ts)
+- [ProfileScreen.ts](src/ui/ProfileScreen.ts)
 
 ### Purpose
 
@@ -310,7 +310,7 @@ Select, create, inspect, or delete profiles.
 ## 5.3 Game Shell
 
 Source:
-- [GameShell.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/GameShell.ts)
+- [GameShell.ts](src/ui/GameShell.ts)
 
 ### Purpose
 
@@ -348,7 +348,7 @@ Host the world canvas and all persistent overlays.
 ## 5.4 Mode Toggle
 
 Source:
-- [ModeToggle.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ModeToggle.ts)
+- [ModeToggle.ts](src/ui/ModeToggle.ts)
 
 ### Current buttons
 
@@ -373,7 +373,7 @@ Treat this as a primary world command bar, not a random utility strip.
 ## 5.5 HUD
 
 Source:
-- [HUD.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/HUD.ts)
+- [HUD.ts](src/ui/HUD.ts)
 
 ### Current role
 
@@ -394,8 +394,8 @@ For now, preserve at least:
 ## 5.6 Map Browser Overlay
 
 Source:
-- [MapBrowser.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/MapBrowser.ts)
-- [MapBrowser.css](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/MapBrowser.css)
+- [MapBrowser.ts](src/ui/MapBrowser.ts)
+- [MapBrowser.css](src/ui/MapBrowser.css)
 
 ### Purpose
 
@@ -451,7 +451,7 @@ Browse maps, travel, inspect map type, create new maps.
 ## 5.7 Chat Panel
 
 Source:
-- [ChatPanel.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ChatPanel.ts)
+- [ChatPanel.ts](src/ui/ChatPanel.ts)
 
 ### Purpose
 
@@ -486,7 +486,7 @@ World-level chat with unread state and inline send.
 ## 5.8 Character Panel
 
 Source:
-- [CharacterPanel.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/CharacterPanel.ts)
+- [CharacterPanel.ts](src/ui/CharacterPanel.ts)
 
 ### Purpose
 
@@ -518,7 +518,7 @@ Profile/stats/items/NPC history panel for the active character.
 ## 5.9 Build Mode / Map Editor
 
 Source:
-- [MapEditorPanel.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/editor/MapEditorPanel.ts)
+- [MapEditorPanel.ts](src/editor/MapEditorPanel.ts)
 
 ### Purpose
 
@@ -553,7 +553,7 @@ This is one of the highest-complexity surfaces. Design it as a workstation, not 
 ## 5.10 Sprite Editor
 
 Source:
-- [SpriteEditorPanel.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/sprited/SpriteEditorPanel.ts)
+- [SpriteEditorPanel.ts](src/sprited/SpriteEditorPanel.ts)
 
 ### Purpose
 
@@ -571,7 +571,7 @@ Manage sprite sheets and sprite definitions used in maps and characters.
 ## 5.11 NPC Editor
 
 Source:
-- [NpcEditorPanel.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/NpcEditorPanel.ts)
+- [NpcEditorPanel.ts](src/ui/NpcEditorPanel.ts)
 
 ### Purpose
 
@@ -596,7 +596,7 @@ Those are related but not the same thing.
 ## 5.12 Item Editor
 
 Source:
-- [ItemEditorPanel.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ItemEditorPanel.ts)
+- [ItemEditorPanel.ts](src/ui/ItemEditorPanel.ts)
 
 ### Purpose
 
@@ -613,7 +613,7 @@ Define item records and item placement/editing workflows.
 ## 5.13 Splash Screens
 
 Source folder:
-- [src/splash/screens](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens)
+- [src/splash/screens](src/splash/screens)
 
 Current splash inventory:
 - `IntroSplash`

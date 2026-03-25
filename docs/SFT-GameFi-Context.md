@@ -94,7 +94,7 @@ They should be described as:
 
 SFTs and GameFi are part of the active backlog, not discarded scope.
 
-Use [GameFi-Backlog.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/status/GameFi-Backlog.md) as the canonical next-layer reference for:
+Use [GameFi-Backlog.md](docs/status/GameFi-Backlog.md) as the canonical next-layer reference for:
 
 - repeatable item classes
 - tavern consumables

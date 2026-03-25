@@ -24,11 +24,11 @@ The project builds on the 61cygni/tinyrealms 2D engine, providing a strong found
 - **Agent direction**: AIBTC informs the wallet-backed agent pattern and the `market.btc` implementation lineage.
 
 Start here for the clean reading order:
-- [docs/00-Start-Here.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/00-Start-Here.md)
+- [docs/00-Start-Here.md](docs/00-Start-Here.md)
 
 Submission pack:
-- [submission/README.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/submission/README.md)
-- [submission/submission.json](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/submission/submission.json)
+- [submission/README.md](submission/README.md)
+- [submission/submission.json](submission/submission.json)
 
 ## Current Demo
 

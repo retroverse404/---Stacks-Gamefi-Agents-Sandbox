@@ -64,7 +64,7 @@ Practical rule:
 - if it is unique and culturally meaningful, it is an **NFT artifact**
 - if it is a spendable balance, it is **currency**
 
-For the contract-side explanation, see [Contract-Cheat-Sheet.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Contract-Cheat-Sheet.md).
+For the contract-side explanation, see [Contract-Cheat-Sheet.md](docs/Contract-Cheat-Sheet.md).
 
 ---
 

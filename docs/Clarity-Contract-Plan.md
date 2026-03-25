@@ -41,7 +41,7 @@ If the contract layer feels abstract, use this:
 - future `SFT`
   - how many repeatable game items/resources does this wallet have?
 
-For a shorter explanation, use [Contract-Cheat-Sheet.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Contract-Cheat-Sheet.md).
+For a shorter explanation, use [Contract-Cheat-Sheet.md](docs/Contract-Cheat-Sheet.md).
 
 ## Current Decision
 

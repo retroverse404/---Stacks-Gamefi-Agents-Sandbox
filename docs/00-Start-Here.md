@@ -13,21 +13,21 @@ Last verified: 2026-03-19
 
 Read these in order:
 
-1. [Overview.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Overview.md)
-2. [Current-Truth-Matrix.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/status/Current-Truth-Matrix.md)
-3. [Project-Timeline.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/status/Project-Timeline.md)
-4. [Backend-Contract.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Backend-Contract.md)
-5. [System-Diagrams.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/architecture/System-Diagrams.md)
-6. [Spatial-Intelligence-Direction.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/architecture/Spatial-Intelligence-Direction.md)
-7. [Five-Pillars-and-Reality-Protocol.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/architecture/Five-Pillars-and-Reality-Protocol.md)
-8. [Stacks-Implementation-Status.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Stacks-Implementation-Status.md)
-9. [X402-Service-Boundary.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/X402-Service-Boundary.md)
-10. [Clarity-Contract-Plan.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Clarity-Contract-Plan.md)
-11. [Contract-Cheat-Sheet.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Contract-Cheat-Sheet.md)
-12. [Agent-Wallet-Ledger.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Agent-Wallet-Ledger.md)
-13. [Agent-Wallet-Architecture.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Agent-Wallet-Architecture.md)
-14. [Operations.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Operations.md)
-15. [Release-System.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Release-System.md)
+1. [Overview.md](docs/Overview.md)
+2. [Current-Truth-Matrix.md](docs/status/Current-Truth-Matrix.md)
+3. [Project-Timeline.md](docs/status/Project-Timeline.md)
+4. [Backend-Contract.md](docs/Backend-Contract.md)
+5. [System-Diagrams.md](docs/architecture/System-Diagrams.md)
+6. [Spatial-Intelligence-Direction.md](docs/architecture/Spatial-Intelligence-Direction.md)
+7. [Five-Pillars-and-Reality-Protocol.md](docs/architecture/Five-Pillars-and-Reality-Protocol.md)
+8. [Stacks-Implementation-Status.md](docs/Stacks-Implementation-Status.md)
+9. [X402-Service-Boundary.md](docs/X402-Service-Boundary.md)
+10. [Clarity-Contract-Plan.md](docs/Clarity-Contract-Plan.md)
+11. [Contract-Cheat-Sheet.md](docs/Contract-Cheat-Sheet.md)
+12. [Agent-Wallet-Ledger.md](docs/Agent-Wallet-Ledger.md)
+13. [Agent-Wallet-Architecture.md](docs/Agent-Wallet-Architecture.md)
+14. [Operations.md](docs/Operations.md)
+15. [Release-System.md](docs/Release-System.md)
 
 ## Codex Session Logs
 

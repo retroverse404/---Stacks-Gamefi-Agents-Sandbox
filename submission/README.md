@@ -33,12 +33,12 @@ Five AI agents with real testnet wallets live inside a 2D world. Players pay the
 
 ## Canonical Files
 
-- Machine-readable summary: [submission.json](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/submission/submission.json)
-- Project reading order: [00-Start-Here.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/00-Start-Here.md)
-- Submission narrative: [Dungeons-and-Agents.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Dungeons-and-Agents.md)
-- Stacks implementation status: [Stacks-Implementation-Status.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Stacks-Implementation-Status.md)
-- Demo checklist: [demo-checklist.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/submission/demo-checklist.md)
+- Machine-readable summary: [submission.json](submission/submission.json)
+- Project reading order: [00-Start-Here.md](docs/00-Start-Here.md)
+- Submission narrative: [Dungeons-and-Agents.md](docs/Dungeons-and-Agents.md)
+- Stacks implementation status: [Stacks-Implementation-Status.md](docs/Stacks-Implementation-Status.md)
+- Demo checklist: [demo-checklist.md](submission/demo-checklist.md)
 
 ## Machine-Readable Summary
 
-[submission.json](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/submission/submission.json) is the canonical machine-readable summary for hackathon reviewers, proof links, and final packaging.
+[submission.json](submission/submission.json) is the canonical machine-readable summary for hackathon reviewers, proof links, and final packaging.

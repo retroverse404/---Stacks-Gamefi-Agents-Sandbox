@@ -15,5 +15,5 @@ Archive candidates usually have one of these traits:
 
 Current rule:
 
-- if a doc is linked from [00-Start-Here.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/00-Start-Here.md), it is canonical
+- if a doc is linked from [00-Start-Here.md](docs/00-Start-Here.md), it is canonical
 - if not, it should be treated as working material until explicitly promoted or archived

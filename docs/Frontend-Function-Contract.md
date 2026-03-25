@@ -40,7 +40,7 @@ What can be replaced freely:
 - wording, if it preserves meaning
 
 Reference:
-- [UI-Design-Blueprint.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/UI-Design-Blueprint.md)
+- [UI-Design-Blueprint.md](docs/UI-Design-Blueprint.md)
 
 ---
 
@@ -88,7 +88,7 @@ Frontend should also avoid becoming the source of truth for:
 - agent state transitions
 
 Reference:
-- [convex/integrations/README.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/convex/integrations/README.md)
+- [convex/integrations/README.md](convex/integrations/README.md)
 
 ---
 
@@ -98,12 +98,12 @@ Current module map:
 
 | Layer | Current module(s) | Purpose |
 |---|---|---|
-| app flow | [App.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/App.ts) | boot, auth flow, local-dev bootstrap |
-| world shell | [GameShell.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/GameShell.ts) | canvas + shell UI |
-| shell controls | [ModeToggle.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ModeToggle.ts), [HUD.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/HUD.ts) | mode and persistent status |
+| app flow | [App.ts](src/App.ts) | boot, auth flow, local-dev bootstrap |
+| world shell | [GameShell.ts](src/ui/GameShell.ts) | canvas + shell UI |
+| shell controls | [ModeToggle.ts](src/ui/ModeToggle.ts), [HUD.ts](src/ui/HUD.ts) | mode and persistent status |
 | shell panels | `ChatPanel`, `CharacterPanel`, `MapBrowser` | persistent world tools |
 | editors | `MapEditorPanel`, `SpriteEditorPanel`, `NpcEditorPanel`, `ItemEditorPanel` | admin / creator tools |
-| overlay system | [SplashTypes.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/SplashTypes.ts), `SplashHost`, `SplashManager`, splash screens | focused interaction screens |
+| overlay system | [SplashTypes.ts](src/splash/SplashTypes.ts), `SplashHost`, `SplashManager`, splash screens | focused interaction screens |
 
 ---
 
@@ -114,7 +114,7 @@ This is the most important section for a replacement frontend.
 ## 4.1 Auth Screen
 
 Source:
-- [AuthScreen.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts)
+- [AuthScreen.ts](src/ui/AuthScreen.ts)
 
 ### Inputs
 
@@ -153,7 +153,7 @@ You may redesign the screen completely, but you must preserve:
 ## 4.2 Profile Screen
 
 Source:
-- [ProfileScreen.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ProfileScreen.ts)
+- [ProfileScreen.ts](src/ui/ProfileScreen.ts)
 
 ### Reads
 
@@ -190,7 +190,7 @@ Source:
 ## 4.3 Game Shell
 
 Source:
-- [GameShell.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/GameShell.ts)
+- [GameShell.ts](src/ui/GameShell.ts)
 
 ### Inputs
 
@@ -228,7 +228,7 @@ Any future frontend needs a shell-level controller that can:
 ## 4.4 Map Browser
 
 Source:
-- [MapBrowser.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/MapBrowser.ts)
+- [MapBrowser.ts](src/ui/MapBrowser.ts)
 
 ### Reads
 
@@ -267,7 +267,7 @@ This screen is not just visual navigation. It is also the policy surface for:
 ## 4.5 Chat Panel
 
 Source:
-- [ChatPanel.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ChatPanel.ts)
+- [ChatPanel.ts](src/ui/ChatPanel.ts)
 
 ### Reads
 
@@ -293,7 +293,7 @@ Any new frontend should preserve that intentionally unless backend behavior is c
 ## 4.6 Character Panel
 
 Source:
-- [CharacterPanel.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/CharacterPanel.ts)
+- [CharacterPanel.ts](src/ui/CharacterPanel.ts)
 
 ### Reads
 
@@ -319,7 +319,7 @@ This panel mixes readonly player-facing data with admin-only editing. That disti
 ## 4.7 Map Editor
 
 Source:
-- [MapEditorPanel.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/editor/MapEditorPanel.ts)
+- [MapEditorPanel.ts](src/editor/MapEditorPanel.ts)
 
 ### Reads
 
@@ -354,7 +354,7 @@ This is the single most state-heavy surface in the app. A replacement frontend s
 ## 4.8 Sprite Editor
 
 Source:
-- [SpriteEditorPanel.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/sprited/SpriteEditorPanel.ts)
+- [SpriteEditorPanel.ts](src/sprited/SpriteEditorPanel.ts)
 
 ### Reads
 
@@ -372,7 +372,7 @@ This screen is definition management, not just art preview.
 ## 4.9 NPC Editor
 
 Source:
-- [NpcEditorPanel.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/NpcEditorPanel.ts)
+- [NpcEditorPanel.ts](src/ui/NpcEditorPanel.ts)
 
 ### Reads
 
@@ -398,7 +398,7 @@ Do not collapse them into one UI object without redesigning the backend meaning.
 ## 4.10 Item Editor
 
 Source:
-- [ItemEditorPanel.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ItemEditorPanel.ts)
+- [ItemEditorPanel.ts](src/ui/ItemEditorPanel.ts)
 
 ### Reads
 
@@ -412,7 +412,7 @@ Source:
 ## 4.11 Guide NPC Splash
 
 Source:
-- [GuideNpcSplash.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/GuideNpcSplash.ts)
+- [GuideNpcSplash.ts](src/splash/screens/GuideNpcSplash.ts)
 
 ### Reads
 
@@ -457,7 +457,7 @@ Frontend rebuilds should continue to treat these as first-class objects:
 ### `ProfileData`
 
 Source:
-- [types.ts](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/types.ts)
+- [types.ts](src/engine/types.ts)
 
 Fields used heavily by UI:
 - `_id`

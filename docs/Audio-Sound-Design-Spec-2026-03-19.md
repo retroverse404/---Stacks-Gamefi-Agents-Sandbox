@@ -39,7 +39,7 @@ For hackathon impact, the best move is not "more audio tech". The best move is a
 ## Live runtime path
 
 Primary live audio engine:
-- [`src/engine/AudioManager.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/AudioManager.ts)
+- [`src/engine/AudioManager.ts`](src/engine/AudioManager.ts)
 
 What it currently does:
 - creates one `AudioContext` on first user gesture
@@ -55,29 +55,29 @@ What it currently does:
 - caches decoded buffers by URL
 
 Key integration points:
-- game creates the audio manager in [`src/engine/Game.ts#L246`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/Game.ts#L246)
-- audio unlock on first click/key in [`src/engine/Game.ts#L300`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/Game.ts#L300)
-- mute toggle on `M` in [`src/engine/Game.ts#L309`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/Game.ts#L309)
-- map music playback in [`src/engine/Game.ts#L421`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/Game.ts#L421)
-- premium video temporarily pauses world music in [`src/engine/Game.ts#L2230`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/Game.ts#L2230)
+- game creates the audio manager in [`src/engine/Game.ts#L246`](src/engine/Game.ts#L246)
+- audio unlock on first click/key in [`src/engine/Game.ts#L300`](src/engine/Game.ts#L300)
+- mute toggle on `M` in [`src/engine/Game.ts#L309`](src/engine/Game.ts#L309)
+- map music playback in [`src/engine/Game.ts#L421`](src/engine/Game.ts#L421)
+- premium video temporarily pauses world music in [`src/engine/Game.ts#L2230`](src/engine/Game.ts#L2230)
 
 ## Spatial ambient path actually in use
 
 Object ambient audio:
-- object sounds start in [`src/engine/ObjectLayer.ts#L302`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/ObjectLayer.ts#L302)
-- object ambient volumes are updated every frame in [`src/engine/ObjectLayer.ts#L358`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/ObjectLayer.ts#L358)
-- the game calls this updater in [`src/engine/Game.ts#L1028`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/Game.ts#L1028)
+- object sounds start in [`src/engine/ObjectLayer.ts#L302`](src/engine/ObjectLayer.ts#L302)
+- object ambient volumes are updated every frame in [`src/engine/ObjectLayer.ts#L358`](src/engine/ObjectLayer.ts#L358)
+- the game calls this updater in [`src/engine/Game.ts#L1028`](src/engine/Game.ts#L1028)
 
 NPC ambient audio:
-- NPC ambient starts in [`src/engine/EntityLayer.ts#L240`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/EntityLayer.ts#L240)
-- NPC ambient attenuation is updated in [`src/engine/EntityLayer.ts#L621`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/EntityLayer.ts#L621)
+- NPC ambient starts in [`src/engine/EntityLayer.ts#L240`](src/engine/EntityLayer.ts#L240)
+- NPC ambient attenuation is updated in [`src/engine/EntityLayer.ts#L621`](src/engine/EntityLayer.ts#L621)
 
 This means the live architecture already supports simple spatial mixing through distance-based volume, but not true stereo scene design.
 
 ## Prototype path not currently wired
 
 There is also:
-- [`src/engine/SpatialAudio.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/SpatialAudio.ts)
+- [`src/engine/SpatialAudio.ts`](src/engine/SpatialAudio.ts)
 
 Important truth:
 - it is not referenced by the live app
@@ -87,8 +87,8 @@ Important truth:
 ## Separate profile-screen audio path
 
 Profile/character-select soundtrack:
-- uses `new Audio(...)` in [`src/ui/ProfileScreen.ts#L1341`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ProfileScreen.ts#L1341)
-- has its own enable/toggle flow in [`src/ui/ProfileScreen.ts#L1365`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ProfileScreen.ts#L1365)
+- uses `new Audio(...)` in [`src/ui/ProfileScreen.ts#L1341`](src/ui/ProfileScreen.ts#L1341)
+- has its own enable/toggle flow in [`src/ui/ProfileScreen.ts#L1365`](src/ui/ProfileScreen.ts#L1365)
 
 This is fine for now, but it means the app has two audio control paths:
 - `AudioManager` for world audio
@@ -110,24 +110,24 @@ Sprite definitions:
 - door close one-shot
 
 Source:
-- [`convex/schema.ts#L124`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/convex/schema.ts#L124)
+- [`convex/schema.ts#L124`](convex/schema.ts#L124)
 
 Item definitions:
 - pickup one-shot
 
 Source:
-- [`convex/schema.ts#L618`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/convex/schema.ts#L618)
+- [`convex/schema.ts#L618`](convex/schema.ts#L618)
 
 Map data:
 - `musicUrl`
 
 Source:
-- [`src/engine/types.ts#L52`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/types.ts#L52)
+- [`src/engine/types.ts#L52`](src/engine/types.ts#L52)
 
 Editor support already exists:
-- map music picker in [`src/editor/MapEditorPanel.ts#L1599`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/editor/MapEditorPanel.ts#L1599)
-- sprite sound fields in [`src/sprited/SpriteEditorPanel.ts#L371`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/sprited/SpriteEditorPanel.ts#L371)
-- item pickup sound field in [`src/ui/ItemEditorPanel.ts#L342`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ItemEditorPanel.ts#L342)
+- map music picker in [`src/editor/MapEditorPanel.ts#L1599`](src/editor/MapEditorPanel.ts#L1599)
+- sprite sound fields in [`src/sprited/SpriteEditorPanel.ts#L371`](src/sprited/SpriteEditorPanel.ts#L371)
+- item pickup sound field in [`src/ui/ItemEditorPanel.ts#L342`](src/ui/ItemEditorPanel.ts#L342)
 
 ## Current Asset Reality
 
@@ -418,18 +418,18 @@ Example categories:
 Best immediate code hooks for a polish pass:
 
 UI:
-- [`src/ui/ModeToggle.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ModeToggle.ts)
-- [`src/ui/ProfileScreen.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ProfileScreen.ts)
-- [`src/ui/MapBrowser.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/MapBrowser.ts)
+- [`src/ui/ModeToggle.ts`](src/ui/ModeToggle.ts)
+- [`src/ui/ProfileScreen.ts`](src/ui/ProfileScreen.ts)
+- [`src/ui/MapBrowser.ts`](src/ui/MapBrowser.ts)
 
 World:
-- [`src/engine/Game.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/Game.ts)
-- [`src/engine/ObjectLayer.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/ObjectLayer.ts)
-- [`src/engine/EntityLayer.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/EntityLayer.ts)
+- [`src/engine/Game.ts`](src/engine/Game.ts)
+- [`src/engine/ObjectLayer.ts`](src/engine/ObjectLayer.ts)
+- [`src/engine/EntityLayer.ts`](src/engine/EntityLayer.ts)
 
 Data-authored sound assignment:
-- [`src/sprited/SpriteEditorPanel.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/sprited/SpriteEditorPanel.ts)
-- [`src/ui/ItemEditorPanel.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ItemEditorPanel.ts)
+- [`src/sprited/SpriteEditorPanel.ts`](src/sprited/SpriteEditorPanel.ts)
+- [`src/ui/ItemEditorPanel.ts`](src/ui/ItemEditorPanel.ts)
 
 ## Sound Design Session Checklist
 
@@ -514,10 +514,10 @@ Use for:
 - non-destructive modal buttons
 
 Primary code surfaces:
-- [`src/ui/ModeToggle.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ModeToggle.ts)
-- [`src/ui/ProfileScreen.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ProfileScreen.ts)
-- [`src/ui/MapBrowser.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/MapBrowser.ts)
-- [`src/ui/AuthScreen.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts)
+- [`src/ui/ModeToggle.ts`](src/ui/ModeToggle.ts)
+- [`src/ui/ProfileScreen.ts`](src/ui/ProfileScreen.ts)
+- [`src/ui/MapBrowser.ts`](src/ui/MapBrowser.ts)
+- [`src/ui/AuthScreen.ts`](src/ui/AuthScreen.ts)
 
 Do not use for:
 - premium unlock success
@@ -532,9 +532,9 @@ Use sparingly for:
 - key map/navigation buttons
 
 Primary code surfaces:
-- [`src/ui/AuthScreen.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts)
-- [`src/splash/screens/GuideNpcSplash.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/GuideNpcSplash.ts)
-- [`src/splash/screens/MarketNpcSplash.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/MarketNpcSplash.ts)
+- [`src/ui/AuthScreen.ts`](src/ui/AuthScreen.ts)
+- [`src/splash/screens/GuideNpcSplash.ts`](src/splash/screens/GuideNpcSplash.ts)
+- [`src/splash/screens/MarketNpcSplash.ts`](src/splash/screens/MarketNpcSplash.ts)
 
 Rule:
 - not every hover
@@ -549,9 +549,9 @@ Use when opening:
 - account/details overlays
 
 Primary code surfaces:
-- NPC dialogue entry in [`src/engine/EntityLayer.ts#L979`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/EntityLayer.ts#L979)
+- NPC dialogue entry in [`src/engine/EntityLayer.ts#L979`](src/engine/EntityLayer.ts#L979)
 - splash push/open paths in `src/splash/screens/*`
-- map browser toggle paths in [`src/ui/GameShell.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/GameShell.ts)
+- map browser toggle paths in [`src/ui/GameShell.ts`](src/ui/GameShell.ts)
 
 ### `ui-panel-close`
 
@@ -563,7 +563,7 @@ Use when closing:
 
 Primary code surfaces:
 - splash close handlers
-- premium video close in [`src/engine/Game.ts#L2208`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/Game.ts#L2208)
+- premium video close in [`src/engine/Game.ts#L2208`](src/engine/Game.ts#L2208)
 
 ### `ui-confirm-soft`
 
@@ -574,9 +574,9 @@ Use for:
 - local save/apply actions
 
 Primary code surfaces:
-- auth success in [`src/ui/AuthScreen.ts#L333`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts#L333)
-- wallet connected in [`src/ui/AuthScreen.ts#L496`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts#L496)
-- profile entry points in [`src/ui/ProfileScreen.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ProfileScreen.ts)
+- auth success in [`src/ui/AuthScreen.ts#L333`](src/ui/AuthScreen.ts#L333)
+- wallet connected in [`src/ui/AuthScreen.ts#L496`](src/ui/AuthScreen.ts#L496)
+- profile entry points in [`src/ui/ProfileScreen.ts`](src/ui/ProfileScreen.ts)
 
 ### `ui-error-soft`
 
@@ -587,9 +587,9 @@ Use for:
 - generic failed UI action
 
 Primary code surfaces:
-- form validation and auth errors in [`src/ui/AuthScreen.ts#L316`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts#L316)
-- wallet failure in [`src/ui/AuthScreen.ts#L507`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts#L507)
-- generic status/error panels in [`src/ui/ProfileScreen.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/ProfileScreen.ts) and [`src/ui/MapBrowser.ts`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/MapBrowser.ts)
+- form validation and auth errors in [`src/ui/AuthScreen.ts#L316`](src/ui/AuthScreen.ts#L316)
+- wallet failure in [`src/ui/AuthScreen.ts#L507`](src/ui/AuthScreen.ts#L507)
+- generic status/error panels in [`src/ui/ProfileScreen.ts`](src/ui/ProfileScreen.ts) and [`src/ui/MapBrowser.ts`](src/ui/MapBrowser.ts)
 
 ### `txn-start`
 
@@ -603,11 +603,11 @@ Use when the user commits to:
 - paid quote request
 
 Primary code surfaces:
-- sign-in start in [`src/ui/AuthScreen.ts#L329`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts#L329)
-- GitHub redirect start in [`src/ui/AuthScreen.ts#L347`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts#L347)
-- wallet connect start in [`src/ui/AuthScreen.ts#L477`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts#L477)
-- guide premium request start in [`src/splash/screens/GuideNpcSplash.ts#L723`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/GuideNpcSplash.ts#L723)
-- market quote request start in [`src/splash/screens/MarketNpcSplash.ts#L469`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/MarketNpcSplash.ts#L469)
+- sign-in start in [`src/ui/AuthScreen.ts#L329`](src/ui/AuthScreen.ts#L329)
+- GitHub redirect start in [`src/ui/AuthScreen.ts#L347`](src/ui/AuthScreen.ts#L347)
+- wallet connect start in [`src/ui/AuthScreen.ts#L477`](src/ui/AuthScreen.ts#L477)
+- guide premium request start in [`src/splash/screens/GuideNpcSplash.ts#L723`](src/splash/screens/GuideNpcSplash.ts#L723)
+- market quote request start in [`src/splash/screens/MarketNpcSplash.ts#L469`](src/splash/screens/MarketNpcSplash.ts#L469)
 
 ### `txn-waiting-pulse`
 
@@ -623,10 +623,10 @@ Use when entering a pending state:
 - wallet approval requested
 
 Primary code surfaces:
-- auth pending text states in [`src/ui/AuthScreen.ts#L331`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts#L331)
-- wallet connection pending in [`src/ui/AuthScreen.ts#L489`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts#L489)
-- guide x402 pending in [`src/splash/screens/GuideNpcSplash.ts#L774`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/GuideNpcSplash.ts#L774)
-- market trace pending rows in [`src/splash/screens/MarketNpcSplash.ts#L483`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/MarketNpcSplash.ts#L483)
+- auth pending text states in [`src/ui/AuthScreen.ts#L331`](src/ui/AuthScreen.ts#L331)
+- wallet connection pending in [`src/ui/AuthScreen.ts#L489`](src/ui/AuthScreen.ts#L489)
+- guide x402 pending in [`src/splash/screens/GuideNpcSplash.ts#L774`](src/splash/screens/GuideNpcSplash.ts#L774)
+- market trace pending rows in [`src/splash/screens/MarketNpcSplash.ts#L483`](src/splash/screens/MarketNpcSplash.ts#L483)
 
 Implementation note:
 - do not make this a loud loop
@@ -641,10 +641,10 @@ Use for:
 - quote delivered
 
 Primary code surfaces:
-- sign-in success in [`src/ui/AuthScreen.ts#L336`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts#L336)
-- wallet connected in [`src/ui/AuthScreen.ts#L504`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts#L504)
-- guide premium delivered in [`src/splash/screens/GuideNpcSplash.ts#L805`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/GuideNpcSplash.ts#L805)
-- market quote result after successful `x402Fetch` in [`src/splash/screens/MarketNpcSplash.ts#L487`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/MarketNpcSplash.ts#L487)
+- sign-in success in [`src/ui/AuthScreen.ts#L336`](src/ui/AuthScreen.ts#L336)
+- wallet connected in [`src/ui/AuthScreen.ts#L504`](src/ui/AuthScreen.ts#L504)
+- guide premium delivered in [`src/splash/screens/GuideNpcSplash.ts#L805`](src/splash/screens/GuideNpcSplash.ts#L805)
+- market quote result after successful `x402Fetch` in [`src/splash/screens/MarketNpcSplash.ts#L487`](src/splash/screens/MarketNpcSplash.ts#L487)
 
 ### `txn-fail`
 
@@ -656,10 +656,10 @@ Use for:
 - quote request failure
 
 Primary code surfaces:
-- auth failure in [`src/ui/AuthScreen.ts#L339`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts#L339)
-- wallet failure in [`src/ui/AuthScreen.ts#L507`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/ui/AuthScreen.ts#L507)
-- guide premium failure in [`src/splash/screens/GuideNpcSplash.ts#L807`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/GuideNpcSplash.ts#L807)
-- market quote failure in [`src/splash/screens/MarketNpcSplash.ts#L490`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/MarketNpcSplash.ts#L490)
+- auth failure in [`src/ui/AuthScreen.ts#L339`](src/ui/AuthScreen.ts#L339)
+- wallet failure in [`src/ui/AuthScreen.ts#L507`](src/ui/AuthScreen.ts#L507)
+- guide premium failure in [`src/splash/screens/GuideNpcSplash.ts#L807`](src/splash/screens/GuideNpcSplash.ts#L807)
+- market quote failure in [`src/splash/screens/MarketNpcSplash.ts#L490`](src/splash/screens/MarketNpcSplash.ts#L490)
 
 ### `txn-unlock-stinger`
 
@@ -671,8 +671,8 @@ Use only for:
 - premium video successfully opened
 
 Primary code surfaces:
-- guide premium delivered in [`src/splash/screens/GuideNpcSplash.ts#L805`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/splash/screens/GuideNpcSplash.ts#L805)
-- premium video open path in [`src/engine/Game.ts#L2230`](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/src/engine/Game.ts#L2230)
+- guide premium delivered in [`src/splash/screens/GuideNpcSplash.ts#L805`](src/splash/screens/GuideNpcSplash.ts#L805)
+- premium video open path in [`src/engine/Game.ts#L2230`](src/engine/Game.ts#L2230)
 
 Rule:
 - do not reuse this for ordinary confirms

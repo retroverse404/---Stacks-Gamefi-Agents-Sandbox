@@ -26,7 +26,7 @@ Use this split strictly:
 
 Private credential note:
 
-- [wallet-mnemonics.PRIVATE.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/agents/AIBTC/wallet-mnemonics.PRIVATE.md)
+- [wallet-mnemonics.PRIVATE.md](agents/AIBTC/wallet-mnemonics.PRIVATE.md)
 
 Do not copy secrets into repo docs, README files, or submission material.
 
@@ -63,14 +63,14 @@ This query returns the current normalized wallet-backed agent rows, including:
 
 Primary repo docs:
 
-- [Agent-Wallet-Architecture.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/Agent-Wallet-Architecture.md)
-- [Current-Truth-Matrix.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/status/Current-Truth-Matrix.md)
-- [submission.json](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/submission/submission.json)
+- [Agent-Wallet-Architecture.md](docs/Agent-Wallet-Architecture.md)
+- [Current-Truth-Matrix.md](docs/status/Current-Truth-Matrix.md)
+- [submission.json](submission/submission.json)
 
 Supporting lineage docs:
 
-- [AIBTC-Agent-Ingress.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/docs/AIBTC-Agent-Ingress.md)
-- [Bitflow-Tutorial-1/README.md](/home/rv404/RV404-Lab/PRODUCTIVITY/Obsidian/Test-1a/Apps/tinyrealms/agents/AIBTC/Bitflow-Tutorial-1/README.md)
+- [AIBTC-Agent-Ingress.md](docs/AIBTC-Agent-Ingress.md)
+- [Bitflow-Tutorial-1/README.md](agents/AIBTC/Bitflow-Tutorial-1/README.md)
 
 ## Explorer Direction
 
