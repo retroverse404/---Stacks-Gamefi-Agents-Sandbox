@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { api } from "./_generated/api";
 import { getRequestUserId } from "./lib/getRequestUserId";
-import { assertPlayerCapacity, touchGuestViewer } from "./runtimePolicy";
+import { assertPlayerCapacity, getRuntimePolicyConfig, touchGuestViewer } from "./runtimePolicy";
 
 async function requireOwnedProfile(ctx: any, profileId: any) {
   const userId = await getRequestUserId(ctx);
@@ -34,6 +34,7 @@ export const update = mutation({
   handler: async (ctx, args) => {
     await requireOwnedProfile(ctx, args.profileId);
     await assertPlayerCapacity(ctx, args.profileId);
+    const now = Date.now();
     const existing = await ctx.db
       .query("presence")
       .withIndex("by_profile", (q) => q.eq("profileId", args.profileId))
@@ -50,7 +51,7 @@ export const update = mutation({
       animation: args.animation,
       spriteUrl: args.spriteUrl,
       name: args.name,
-      lastSeen: Date.now(),
+      lastSeen: now,
     };
 
     if (existing) {
@@ -59,10 +60,14 @@ export const update = mutation({
       await ctx.db.insert("presence", data);
     }
 
-    await ctx.runMutation(api.npcEngine.ensureLoop, {});
-    await ctx.runMutation((api as any)["agents/runtime"].ensureEpochLoop, {
-      mapName: args.mapName,
-    });
+    const { authenticatedViewerTtlMs } = getRuntimePolicyConfig();
+    const shouldEnsureLoops = !existing || now - (existing.lastSeen ?? 0) > authenticatedViewerTtlMs;
+    if (shouldEnsureLoops) {
+      await ctx.runMutation(api.npcEngine.ensureLoop, {});
+      await ctx.runMutation((api as any)["agents/runtime"].ensureEpochLoop, {
+        mapName: args.mapName,
+      });
+    }
   },
 });
 
@@ -85,9 +90,11 @@ export const guestHeartbeat = mutation({
   },
   handler: async (ctx, { mapName, sessionId }) => {
     const now = Date.now();
-    await touchGuestViewer(ctx, { sessionId, mapName, now });
-    await ctx.runMutation(api.npcEngine.ensureLoop, {});
-    await ctx.runMutation((api as any)["agents/runtime"].ensureEpochLoop, { mapName });
+    const touchResult = await touchGuestViewer(ctx, { sessionId, mapName, now });
+    if (touchResult.isNew || touchResult.wasStale) {
+      await ctx.runMutation(api.npcEngine.ensureLoop, {});
+      await ctx.runMutation((api as any)["agents/runtime"].ensureEpochLoop, { mapName });
+    }
     return { ok: true, heartbeatAt: now, sessionId };
   },
 });

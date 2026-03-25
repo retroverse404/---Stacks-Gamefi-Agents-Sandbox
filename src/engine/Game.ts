@@ -1302,9 +1302,6 @@ export class Game {
             sessionId: getOrCreateRuntimeViewerId(),
           })
           .catch((err) => console.warn("Guest heartbeat failed:", err));
-        convex
-          .mutation((api as any)["agents/runtime"].ensureEpochLoop, { mapName: this.currentMapName })
-          .catch((err) => console.warn("Agent loop ensure failed:", err));
       };
       sendGuestHeartbeat();
       this.guestHeartbeatTimer = setInterval(sendGuestHeartbeat, GUEST_HEARTBEAT_INTERVAL_MS);

@@ -224,6 +224,7 @@ export async function touchGuestViewer(
   ctx: any,
   { sessionId, mapName, now = Date.now() }: { sessionId: string; mapName?: string; now?: number },
 ) {
+  const { guestViewerTtlMs } = getRuntimePolicyConfig();
   await assertGuestCapacity(ctx, sessionId, now);
 
   const factKey = buildGuestViewerFactKey(sessionId);
@@ -250,8 +251,16 @@ export async function touchGuestViewer(
 
   if (existing) {
     await ctx.db.patch(existing._id, payload);
+    return {
+      isNew: false,
+      wasStale: now - (existing.updatedAt ?? 0) > guestViewerTtlMs,
+    };
   } else {
     await ctx.db.insert("worldFacts", payload);
+    return {
+      isNew: true,
+      wasStale: true,
+    };
   }
 }
 
