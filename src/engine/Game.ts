@@ -280,6 +280,23 @@ export class Game {
   private agentChatterUnsub: (() => void) | null = null;
   /** Cached sprite definitions for NPC rendering */
   private spriteDefCache: Map<string, any> = new Map();
+  private latestNpcStateSnapshot: Array<{
+    _id: string;
+    mapObjectId: string;
+    spriteDefName: string;
+    instanceName?: string;
+    npcProfile?: any;
+    currentIntent?: string;
+    intentDetail?: string;
+    mood?: string;
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    direction: string;
+    speed: number;
+    wanderRadius: number;
+  }> = [];
 
   constructor(canvas: HTMLCanvasElement, profile: ProfileData) {
     this.canvas = canvas;
@@ -1382,6 +1399,9 @@ export class Game {
       const convex = getConvexClient();
       const defs = await convex.query(api.spriteDefinitions.list, {});
       this.spriteDefCache = new Map(defs.map((d) => [d.name, d]));
+      if (this.latestNpcStateSnapshot.length > 0) {
+        this.entityLayer.updateNpcStates(this.latestNpcStateSnapshot, this.spriteDefCache);
+      }
     } catch (err) {
       console.warn("Failed to load sprite definitions:", err);
     }
@@ -2944,27 +2964,24 @@ export class Game {
       api.npcEngine.listByMap,
       { mapName },
       (states) => {
-        // Pass server NPC states + sprite defs to EntityLayer
-        this.entityLayer.updateNpcStates(
-          states.map((s) => ({
-            _id: s._id,
-            mapObjectId: s.mapObjectId as string,
-            spriteDefName: s.spriteDefName,
-            instanceName: s.instanceName ?? undefined,
-            npcProfile: (s as any).npcProfile ?? null,
-            currentIntent: (s as any).currentIntent ?? undefined,
-            intentDetail: (s as any).intentDetail ?? undefined,
-            mood: (s as any).mood ?? undefined,
-            x: s.x,
-            y: s.y,
-            vx: s.vx,
-            vy: s.vy,
-            direction: s.direction,
-            speed: s.speed,
-            wanderRadius: s.wanderRadius,
-          })),
-          this.spriteDefCache,
-        );
+        this.latestNpcStateSnapshot = states.map((s) => ({
+          _id: s._id,
+          mapObjectId: s.mapObjectId as string,
+          spriteDefName: s.spriteDefName,
+          instanceName: s.instanceName ?? undefined,
+          npcProfile: (s as any).npcProfile ?? null,
+          currentIntent: (s as any).currentIntent ?? undefined,
+          intentDetail: (s as any).intentDetail ?? undefined,
+          mood: (s as any).mood ?? undefined,
+          x: s.x,
+          y: s.y,
+          vx: s.vx,
+          vy: s.vy,
+          direction: s.direction,
+          speed: s.speed,
+          wanderRadius: s.wanderRadius,
+        }));
+        this.entityLayer.updateNpcStates(this.latestNpcStateSnapshot, this.spriteDefCache);
       },
       (err) => {
         console.warn("NPC state subscription error:", err);
