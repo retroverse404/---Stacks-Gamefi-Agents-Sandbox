@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { api } from "./_generated/api";
 import { getRequestUserId } from "./lib/getRequestUserId";
 import { assertPlayerCapacity, touchGuestViewer } from "./runtimePolicy";
 
@@ -57,6 +58,11 @@ export const update = mutation({
     } else {
       await ctx.db.insert("presence", data);
     }
+
+    await ctx.runMutation(api.npcEngine.ensureLoop, {});
+    await ctx.runMutation((api as any)["agents/runtime"].ensureEpochLoop, {
+      mapName: args.mapName,
+    });
   },
 });
 
@@ -80,6 +86,8 @@ export const guestHeartbeat = mutation({
   handler: async (ctx, { mapName, sessionId }) => {
     const now = Date.now();
     await touchGuestViewer(ctx, { sessionId, mapName, now });
+    await ctx.runMutation(api.npcEngine.ensureLoop, {});
+    await ctx.runMutation((api as any)["agents/runtime"].ensureEpochLoop, { mapName });
     return { ok: true, heartbeatAt: now, sessionId };
   },
 });

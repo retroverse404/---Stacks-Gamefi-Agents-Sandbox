@@ -1263,13 +1263,8 @@ export class Game {
     // Guests don't broadcast auth-bound presence, but they still send a lightweight
     // heartbeat so the demo world stays alive during guest-only sessions.
     if (!this.isGuest) {
-      // 1) Push local position + velocity periodically (delta-only to reduce DB writes)
-      this.presenceTimer = setInterval(() => {
+      const sendPresenceUpdate = () => {
         const pos = this.entityLayer.getPlayerPosition();
-        const dx = pos.x - this.lastPresenceX;
-        const dy = pos.y - this.lastPresenceY;
-        // Skip update if player hasn't moved beyond threshold (reduces mutations ~50-90%)
-        if (dx * dx + dy * dy < PRESENCE_MOVE_THRESHOLD * PRESENCE_MOVE_THRESHOLD) return;
         this.lastPresenceX = pos.x;
         this.lastPresenceY = pos.y;
         convex
@@ -1286,6 +1281,18 @@ export class Game {
             name: this.profile.name,
           })
           .catch((err) => console.warn("Presence update failed:", err));
+      };
+
+      sendPresenceUpdate();
+
+      // 1) Push local position + velocity periodically (delta-only to reduce DB writes)
+      this.presenceTimer = setInterval(() => {
+        const pos = this.entityLayer.getPlayerPosition();
+        const dx = pos.x - this.lastPresenceX;
+        const dy = pos.y - this.lastPresenceY;
+        // Skip update if player hasn't moved beyond threshold (reduces mutations ~50-90%)
+        if (dx * dx + dy * dy < PRESENCE_MOVE_THRESHOLD * PRESENCE_MOVE_THRESHOLD) return;
+        sendPresenceUpdate();
       }, PRESENCE_INTERVAL_MS);
     } else {
       const sendGuestHeartbeat = () => {
